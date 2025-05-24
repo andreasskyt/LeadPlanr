@@ -1,9 +1,0 @@
-{
-  "/signup/page": "app/signup/page.js",
-  "/login/page": "app/login/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/auth/csrf/route": "app/api/auth/csrf/route.js",
-  "/home/page": "app/home/page.js",
-  "/not-found": "app/not-found.js"
-}
