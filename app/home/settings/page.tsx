@@ -8,11 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
-import { ChevronDown, Trash2, Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { CalendarAccount } from '@/lib/db';
+import { initiateMicrosoftOAuth, initiateGoogleOAuth } from '@/app/actions/oauth';
 
 export default function SettingsPage() {
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +33,11 @@ export default function SettingsPage() {
   };
 
   const handleProviderSelect = async (provider: string) => {
-    setSelectedProvider(provider);
-    // TODO: Implement OAuth flow for the selected provider
-    // This will be implemented when we add the OAuth integration
+    if (provider === 'Microsoft') {
+      await initiateMicrosoftOAuth();
+    } else if (provider === 'Google') {
+      await initiateGoogleOAuth();
+    }
   };
 
   const handleDeleteAccount = async (accountId: string) => {
