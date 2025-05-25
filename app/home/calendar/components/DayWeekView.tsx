@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarEvent } from '@/lib/calendar-service';
+import React from 'react';
 
 interface DayWeekViewProps {
   selectedDate: Date;
@@ -11,7 +12,7 @@ interface DayWeekViewProps {
 }
 
 const HOUR_ROW_HEIGHT = 32; // px
-const TIME_COL_WIDTH = 48; // px (w-12)
+const TIME_COL_WIDTH = 48; // px
 
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
@@ -131,14 +132,19 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
         </div>
         <div className="h-[calc(100%-2rem)] overflow-y-auto relative">
           {/* Hour grid */}
-          {hours.map((hour) => (
-            <div key={hour} className="flex border-b border-gray-200 relative" style={{height: `${HOUR_ROW_HEIGHT}px`}}>
-              <div className="w-12 p-1 text-xs text-gray-500">
-                {hour.toString().padStart(2, '0')}:00
-              </div>
-              <div className="flex-1 p-1 min-h-[20px] relative" />
-            </div>
-          ))}
+          <div className="grid gap-0" style={{gridTemplateColumns: `48px 1fr`}}>
+            {hours.map((hour) => (
+              <React.Fragment key={hour}>
+                <div
+                  className="text-xs text-gray-500 pt-1 pr-1 text-right border-t border-gray-200"
+                  style={{height: `${HOUR_ROW_HEIGHT}px`, lineHeight: '16px'}}
+                >
+                  {hour.toString().padStart(2, '0')}:00
+                </div>
+                <div className="border-t border-gray-200 relative" style={{height: `${HOUR_ROW_HEIGHT}px`}} />
+              </React.Fragment>
+            ))}
+          </div>
           {/* Events */}
           <div className="absolute" style={{left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0}}>
             {dayEvents.map(event => renderEventBlock(event, selectedDate))}
@@ -158,8 +164,8 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     const weekDates = getWeekDates(selectedDate);
     return (
       <div className="h-full">
-        <div className="grid grid-cols-8 gap-0 mb-1" style={{width: `calc(100% + ${TIME_COL_WIDTH}px)`}}>
-          <div className="w-12" />
+        <div className="grid gap-0 mb-1" style={{gridTemplateColumns: `48px repeat(7, 1fr)`}}>
+          <div className="text-xs text-gray-500" />
           {weekDates.map((date) => (
             <div key={date.toISOString()} className="text-center font-semibold text-xs">
               {formatHeader(date)}
@@ -168,18 +174,26 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
         </div>
         <div className="h-[calc(100%-1.5rem)] overflow-y-auto relative">
           {/* Hour grid */}
-          {hours.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b border-gray-200" style={{height: `${HOUR_ROW_HEIGHT}px`}}>
-              <div className="text-xs text-gray-500 p-1 text-right w-12">
-                {hour.toString().padStart(2, '0')}:00
-              </div>
-              {weekDates.map((date) => (
-                <div key={date.toISOString()} className="p-1 min-h-[20px] border-l border-gray-200 relative" />
-              ))}
-            </div>
-          ))}
+          <div className="grid" style={{gridTemplateColumns: `48px repeat(7, 1fr)`}}>
+            {hours.map((hour) => (
+              <React.Fragment key={hour}>
+                <div
+                  className="text-xs text-gray-500 pt-1 pr-1 text-right border-t border-gray-200"
+                  style={{height: `${HOUR_ROW_HEIGHT}px`, lineHeight: '16px'}}
+                >
+                  {hour.toString().padStart(2, '0')}:00
+                </div>
+                {weekDates.map((date, idx) => (
+                  <div key={date.toISOString() + hour}
+                    className={idx === 0 ? 'border-t border-gray-200 border-l border-gray-200 relative' : 'border-t border-gray-200 border-l border-gray-200 relative'}
+                    style={{height: `${HOUR_ROW_HEIGHT}px`}}
+                  />
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
           {/* Events */}
-          <div className="absolute grid grid-cols-7" style={{left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0, pointerEvents: 'none'}}>
+          <div className="absolute grid" style={{gridTemplateColumns: `repeat(7, 1fr)`, left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0, pointerEvents: 'none'}}>
             {weekDates.map((date, idx) => (
               <div key={date.toISOString()} className="relative h-full" style={{pointerEvents: 'auto'}}>
                 {getEventsForDay(date).map(event => renderEventBlock(event, date))}
