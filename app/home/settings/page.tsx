@@ -15,6 +15,7 @@ import { initiateMicrosoftOAuth, initiateGoogleOAuth } from '@/app/actions/oauth
 export default function SettingsPage() {
   const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAccounts();
@@ -40,19 +41,49 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteAccount = async (accountId: string) => {
+  const handleDeleteAccount = async (accountId: number) => {
     try {
-      await fetch(`/api/calendar-accounts/${accountId}`, {
+      console.log('Attempting to delete account:', accountId);
+      const response = await fetch(`/api/calendar-accounts/${accountId}`, {
         method: 'DELETE',
       });
+      
+      console.log('Delete response status:', response.status);
+      const responseData = await response.json();
+      console.log('Delete response data:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete calendar account: ${responseData.error || 'Unknown error'}`);
+      }
+      
+      setMessage(responseData.message);
       await fetchAccounts();
+      
+      // Clear the message after 5 seconds
+      setTimeout(() => setMessage(null), 5000);
     } catch (error) {
       console.error('Error deleting calendar account:', error);
+      setMessage('Failed to delete calendar account. Please try again.');
+      setTimeout(() => setMessage(null), 5000);
     }
   };
 
   return (
     <div className="space-y-6">
+      {message && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">{message}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Associated calendars</h2>

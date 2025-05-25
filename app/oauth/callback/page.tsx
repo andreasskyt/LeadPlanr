@@ -73,12 +73,16 @@ export default async function OAuthCallback({
     console.log('Token response received:', {
       hasAccessToken: !!tokenResponse.access_token,
       hasRefreshToken: !!tokenResponse.refresh_token,
-      expiresIn: tokenResponse.expires_in
+      expiresIn: tokenResponse.expires_in,
+      tokenType: tokenResponse.token_type
     })
 
     // Encrypt the refresh token before storing
     const encryptedRefreshToken = tokenResponse.refresh_token ? encrypt(tokenResponse.refresh_token) : null
-    console.log('Refresh token encrypted:', !!encryptedRefreshToken)
+    console.log('Refresh token handling:', {
+      received: !!tokenResponse.refresh_token,
+      encrypted: !!encryptedRefreshToken
+    })
 
     // Save the calendar account to the database
     console.log('Saving calendar account...')
@@ -91,7 +95,11 @@ export default async function OAuthCallback({
         valid_to: new Date(Date.now() + tokenResponse.expires_in * 1000),
         user_id: decoded.userId
       })
-      console.log('Calendar account saved:', { id: savedAccount.id })
+      console.log('Calendar account saved:', { 
+        id: savedAccount.id,
+        hasAccessToken: !!savedAccount.access_token,
+        hasRefreshToken: !!savedAccount.refresh_token
+      })
     } catch (dbError) {
       console.error('Database error details:', {
         error: dbError,

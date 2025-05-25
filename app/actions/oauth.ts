@@ -15,7 +15,8 @@ export async function initiateMicrosoftOAuth() {
     client_id: MS_CLIENT_ID,
     redirect_uri: `${HOST}/oauth/callback`,
     response_type: 'code',
-    scope: 'Calendars.Read',
+    scope: 'Calendars.Read offline_access',
+    prompt: 'consent',
     state: 'microsoft'
   })
 
@@ -28,6 +29,8 @@ export async function initiateGoogleOAuth() {
     redirect_uri: `${HOST}/oauth/callback`,
     response_type: 'code',
     scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    access_type: 'offline',
+    prompt: 'consent',
     state: 'google'
   })
 

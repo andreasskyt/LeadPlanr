@@ -16,20 +16,18 @@ interface TokenResponse {
 }
 
 export async function exchangeMicrosoftToken(code: string): Promise<TokenResponse> {
-  const params = new URLSearchParams({
-    client_id: MS_CLIENT_ID,
-    client_secret: MS_CLIENT_SECRET,
-    code,
-    redirect_uri: `${HOST}/oauth/callback`,
-    grant_type: 'authorization_code'
-  })
-
   const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: params.toString()
+    body: new URLSearchParams({
+      client_id: MS_CLIENT_ID,
+      client_secret: MS_CLIENT_SECRET,
+      code,
+      redirect_uri: `${HOST}/oauth/callback`,
+      grant_type: 'authorization_code',
+    }),
   })
 
   if (!response.ok) {
@@ -40,20 +38,18 @@ export async function exchangeMicrosoftToken(code: string): Promise<TokenRespons
 }
 
 export async function exchangeGoogleToken(code: string): Promise<TokenResponse> {
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    client_secret: GOOGLE_CLIENT_SECRET,
-    code,
-    redirect_uri: `${HOST}/oauth/callback`,
-    grant_type: 'authorization_code'
-  })
-
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: params.toString()
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      code,
+      redirect_uri: `${HOST}/oauth/callback`,
+      grant_type: 'authorization_code',
+    }),
   })
 
   if (!response.ok) {
@@ -61,4 +57,72 @@ export async function exchangeGoogleToken(code: string): Promise<TokenResponse> 
   }
 
   return response.json()
+}
+
+export async function revokeMicrosoftToken(accessToken: string, refreshToken?: string | null): Promise<void> {
+  // Revoke access token
+  const accessTokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/revoke', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: MS_CLIENT_ID,
+      client_secret: MS_CLIENT_SECRET,
+      token: accessToken,
+    }),
+  })
+
+  if (!accessTokenResponse.ok) {
+    const errorText = await accessTokenResponse.text()
+    console.error('Failed to revoke Microsoft access token:', errorText)
+    throw new Error(`Failed to revoke Microsoft access token: ${errorText}`)
+  }
+
+  // If refresh token exists, revoke it as well
+  if (refreshToken) {
+    const refreshTokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/revoke', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: MS_CLIENT_ID,
+        client_secret: MS_CLIENT_SECRET,
+        token: refreshToken,
+      }),
+    })
+
+    if (!refreshTokenResponse.ok) {
+      const errorText = await refreshTokenResponse.text()
+      console.error('Failed to revoke Microsoft refresh token:', errorText)
+      throw new Error(`Failed to revoke Microsoft refresh token: ${errorText}`)
+    }
+  }
+}
+
+export async function revokeGoogleToken(accessToken: string, refreshToken?: string | null): Promise<void> {
+  // Revoke access token
+  const accessTokenResponse = await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${accessToken}`, {
+    method: 'GET',
+  })
+
+  if (!accessTokenResponse.ok) {
+    const errorText = await accessTokenResponse.text()
+    console.error('Failed to revoke Google access token:', errorText)
+    throw new Error(`Failed to revoke Google access token: ${errorText}`)
+  }
+
+  // If refresh token exists, revoke it as well
+  if (refreshToken) {
+    const refreshTokenResponse = await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${refreshToken}`, {
+      method: 'GET',
+    })
+
+    if (!refreshTokenResponse.ok) {
+      const errorText = await refreshTokenResponse.text()
+      console.error('Failed to revoke Google refresh token:', errorText)
+      throw new Error(`Failed to revoke Google refresh token: ${errorText}`)
+    }
+  }
 } 

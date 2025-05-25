@@ -52,29 +52,24 @@ pool.on('error', (err) => {
 })
 
 // Helper function to run queries
-export async function query(text: string, params?: any[]) {
-  const start = Date.now();
+export async function query<T = any>(text: string, params?: any[]) {
+  console.log('Executing query:', { text, params })
+  const start = Date.now()
   try {
-    console.log('Executing query:', { text, params });
-    const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Query executed successfully', { 
-      text, 
-      duration, 
-      rows: res.rowCount,
-      firstRow: res.rows[0] ? Object.keys(res.rows[0]) : null
-    });
-    return res;
+    const result = await pool.query(text, params)
+    const duration = Date.now() - start
+    console.log('Query executed successfully:', {
+      duration,
+      rows: result.rows.length
+    })
+    return result
   } catch (error) {
-    console.error('Error executing query', { 
-      text, 
-      params,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack
-      } : error
-    });
-    throw error;
+    console.error('Error executing query:', {
+      error,
+      text,
+      params
+    })
+    throw error
   }
 }
 
@@ -96,78 +91,93 @@ export const calendarAccounts = {
   // Create a new calendar account
   async create(data: Omit<CalendarAccount, 'id' | 'created_at' | 'updated_at'>) {
     console.log('Creating calendar account with data:', {
-      provider: data.provider,
-      hasAccessToken: !!data.access_token,
-      hasRefreshToken: !!data.refresh_token,
-      validFrom: data.valid_from,
-      validTo: data.valid_to,
-      userId: data.user_id
-    });
-
-    try {
-      const { rows } = await query(
-        `INSERT INTO calendar_accounts 
-         (provider, access_token, refresh_token, valid_from, valid_to, user_id)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [data.provider, data.access_token, data.refresh_token, data.valid_from, data.valid_to, data.user_id]
-      );
-      console.log('Calendar account created successfully:', { id: rows[0].id });
-      return rows[0];
-    } catch (error) {
-      console.error('Error creating calendar account:', error);
-      throw error;
-    }
+      ...data,
+      access_token: data.access_token ? '[REDACTED]' : undefined,
+      refresh_token: data.refresh_token ? '[REDACTED]' : undefined
+    })
+    const result = await query<CalendarAccount>(
+      `INSERT INTO calendar_accounts (
+        provider,
+        access_token,
+        refresh_token,
+        valid_from,
+        valid_to,
+        user_id
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *`,
+      [
+        data.provider,
+        data.access_token,
+        data.refresh_token,
+        data.valid_from,
+        data.valid_to,
+        data.user_id
+      ]
+    )
+    console.log('Successfully created calendar account with ID:', result.rows[0].id)
+    return result.rows[0]
   },
 
   // Get calendar accounts for a user
   async getByUserId(userId: string) {
-    const { rows } = await query(
+    return query<CalendarAccount>(
       'SELECT * FROM calendar_accounts WHERE user_id = $1',
       [userId]
-    );
-    
-    // Decrypt refresh tokens
-    return rows.map(row => ({
-      ...row,
-      refresh_token: row.refresh_token ? decrypt(row.refresh_token) : null
-    }));
+    ).then(result => result.rows)
+  },
+
+  // Get a calendar account by ID
+  async getById(id: string | number) {
+    const result = await query<CalendarAccount>(
+      'SELECT * FROM calendar_accounts WHERE id = $1',
+      [id]
+    )
+    if (result.rows[0]) {
+      // Decrypt the refresh token if it exists
+      if (result.rows[0].refresh_token) {
+        result.rows[0].refresh_token = decrypt(result.rows[0].refresh_token)
+      }
+    }
+    return result.rows[0]
   },
 
   // Update a calendar account
-  async update(id: string, data: Partial<CalendarAccount>) {
-    // If refresh_token is being updated, ensure it's encrypted
-    if (data.refresh_token) {
-      data.refresh_token = encrypt(data.refresh_token)
-    }
-
-    const setClause = Object.keys(data)
-      .map((key, index) => `${key} = $${index + 2}`)
-      .join(', ');
-    
-    const values = Object.values(data);
-    const { rows } = await query(
-      `UPDATE calendar_accounts 
-       SET ${setClause}
-       WHERE id = $1
+  async update(id: string | number, data: Partial<CalendarAccount>) {
+    const result = await query<CalendarAccount>(
+      `UPDATE calendar_accounts
+       SET provider = COALESCE($1, provider),
+           access_token = COALESCE($2, access_token),
+           refresh_token = COALESCE($3, refresh_token),
+           valid_from = COALESCE($4, valid_from),
+           valid_to = COALESCE($5, valid_to),
+           user_id = COALESCE($6, user_id)
+       WHERE id = $7
        RETURNING *`,
-      [id, ...values]
-    );
-
-    // Decrypt refresh token in response
-    if (rows[0]) {
-      rows[0].refresh_token = rows[0].refresh_token ? decrypt(rows[0].refresh_token) : null
-    }
-    return rows[0];
+      [
+        data.provider,
+        data.access_token,
+        data.refresh_token,
+        data.valid_from,
+        data.valid_to,
+        data.user_id,
+        id
+      ]
+    )
+    return result.rows[0]
   },
 
   // Delete a calendar account
-  async delete(id: string) {
-    const { rows } = await query(
+  async delete(id: string | number) {
+    console.log('Deleting calendar account with ID:', id);
+    const result = await query<CalendarAccount>(
       'DELETE FROM calendar_accounts WHERE id = $1 RETURNING *',
       [id]
     );
-    return rows[0];
+    console.log('Delete result:', { 
+      rowCount: result.rowCount,
+      deletedId: result.rows[0]?.id 
+    });
+    return result.rows[0];
   }
 };
 
