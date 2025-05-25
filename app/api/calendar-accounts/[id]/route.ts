@@ -58,6 +58,10 @@ export async function DELETE(
         });
         await revokeGoogleToken(account.access_token, account.refresh_token);
       } else if (account.provider === 'microsoft') {
+        console.log('Revoking Microsoft tokens:', {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token
+        });
         await revokeMicrosoftToken(account.access_token, account.refresh_token);
       }
       console.log('Tokens revoked successfully');

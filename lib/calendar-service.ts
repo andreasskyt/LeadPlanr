@@ -3,8 +3,8 @@ import { CalendarAccount } from './db';
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: Date;
-  end: Date;
+  start: string; // ISO string
+  end: string;   // ISO string
   location?: string;
   description?: string;
   calendarId: string;
@@ -14,6 +14,18 @@ export interface CalendarEvent {
 class CalendarService {
   private cache: Map<string, { events: CalendarEvent[]; timestamp: number }> = new Map();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  private convertToISOString(date: string | { dateTime: string; timeZone?: string } | { date: string }): string {
+    if (typeof date === 'string') {
+      return date;
+    }
+    if ('dateTime' in date) {
+      return date.dateTime;
+    } else {
+      // All-day event: treat as midnight UTC
+      return date.date + 'T00:00:00Z';
+    }
+  }
 
   async fetchEvents(
     accounts: CalendarAccount[],
@@ -35,7 +47,6 @@ class CalendarService {
         allEvents.push(...events);
       } catch (error) {
         console.error(`Error fetching events for ${account.provider} account:`, error);
-        // If token is invalid, try to refresh it
         if (error instanceof Error && error.message.includes('401')) {
           try {
             const refreshedAccount = await this.refreshToken(account);
@@ -50,10 +61,8 @@ class CalendarService {
       }
     }
 
-    // Sort events by start time
-    allEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+    allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-    // Update cache
     this.cache.set(cacheKey, {
       events: allEvents,
       timestamp: Date.now(),
@@ -102,9 +111,10 @@ class CalendarService {
     startDate: Date,
     endDate: Date
   ): Promise<CalendarEvent[]> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const response = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-      `timeMin=${startDate.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true`,
+      `timeMin=${startDate.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true&timeZone=${timeZone}`,
       {
         headers: {
           Authorization: `Bearer ${account.access_token}`,
@@ -118,16 +128,20 @@ class CalendarService {
     }
 
     const data = await response.json();
-    return data.items.map((item: any) => ({
-      id: item.id,
-      title: item.summary,
-      start: new Date(item.start.dateTime || item.start.date),
-      end: new Date(item.end.dateTime || item.end.date),
-      location: item.location,
-      description: item.description,
-      calendarId: account.id.toString(),
-      provider: 'google' as const,
-    }));
+    return data.items.map((item: any) => {
+      const start = this.convertToISOString(item.start);
+      const end = this.convertToISOString(item.end);
+      return {
+        id: item.id,
+        title: item.summary,
+        start,
+        end,
+        location: item.location,
+        description: item.description,
+        calendarId: account.id.toString(),
+        provider: 'google' as const,
+      };
+    });
   }
 
   private async fetchMicrosoftEvents(
@@ -135,9 +149,10 @@ class CalendarService {
     startDate: Date,
     endDate: Date
   ): Promise<CalendarEvent[]> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/calendarView?` +
-      `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`,
+      `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}&timeZone=${timeZone}`,
       {
         headers: {
           Authorization: `Bearer ${account.access_token}`,
@@ -151,16 +166,20 @@ class CalendarService {
     }
 
     const data = await response.json();
-    return data.value.map((item: any) => ({
-      id: item.id,
-      title: item.subject,
-      start: new Date(item.start.dateTime),
-      end: new Date(item.end.dateTime),
-      location: item.location?.displayName,
-      description: item.bodyPreview,
-      calendarId: account.id.toString(),
-      provider: 'microsoft' as const,
-    }));
+    return data.value.map((item: any) => {
+      const start = this.convertToISOString(item.start);
+      const end = this.convertToISOString(item.end);
+      return {
+        id: item.id,
+        title: item.subject,
+        start,
+        end,
+        location: item.location?.displayName,
+        description: item.bodyPreview,
+        calendarId: account.id.toString(),
+        provider: 'microsoft' as const,
+      };
+    });
   }
 
   clearCache() {
