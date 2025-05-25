@@ -27,4 +27,8 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_calendar_accounts_updated_at
     BEFORE UPDATE ON calendar_accounts
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Grant permissions to fap_user
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO fap_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON calendar_accounts TO fap_user; 

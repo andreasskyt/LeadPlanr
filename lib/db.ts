@@ -12,8 +12,8 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 })
 
-// Test the connection
-pool.connect((err, client, release) => {
+// Test the connection and permissions
+pool.connect(async (err, client, release) => {
   if (err) {
     console.error('Error connecting to the database:', err)
     console.error('Connection details:', {
@@ -23,8 +23,26 @@ pool.connect((err, client, release) => {
     })
     return
   }
-  console.log('Successfully connected to the database')
-  release()
+  if (!client) {
+    console.error('No client returned from pool')
+    return
+  }
+  try {
+    // Test query to verify permissions
+    const result = await client.query('SELECT current_user, current_database()')
+    console.log('Database connection test:', {
+      user: result.rows[0].current_user,
+      database: result.rows[0].current_database
+    })
+    
+    // Test calendar_accounts table access
+    await client.query('SELECT 1 FROM calendar_accounts LIMIT 1')
+    console.log('Successfully verified calendar_accounts table access')
+  } catch (error) {
+    console.error('Error testing database permissions:', error)
+  } finally {
+    release()
+  }
 })
 
 // Add error handler for the pool
@@ -37,12 +55,25 @@ pool.on('error', (err) => {
 export async function query(text: string, params?: any[]) {
   const start = Date.now();
   try {
+    console.log('Executing query:', { text, params });
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
+    console.log('Query executed successfully', { 
+      text, 
+      duration, 
+      rows: res.rowCount,
+      firstRow: res.rows[0] ? Object.keys(res.rows[0]) : null
+    });
     return res;
   } catch (error) {
-    console.error('Error executing query', { text, error });
+    console.error('Error executing query', { 
+      text, 
+      params,
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack
+      } : error
+    });
     throw error;
   }
 }
@@ -64,14 +95,29 @@ export interface CalendarAccount {
 export const calendarAccounts = {
   // Create a new calendar account
   async create(data: Omit<CalendarAccount, 'id' | 'created_at' | 'updated_at'>) {
-    const { rows } = await query(
-      `INSERT INTO calendar_accounts 
-       (provider, access_token, refresh_token, valid_from, valid_to, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [data.provider, data.access_token, data.refresh_token, data.valid_from, data.valid_to, data.user_id]
-    );
-    return rows[0];
+    console.log('Creating calendar account with data:', {
+      provider: data.provider,
+      hasAccessToken: !!data.access_token,
+      hasRefreshToken: !!data.refresh_token,
+      validFrom: data.valid_from,
+      validTo: data.valid_to,
+      userId: data.user_id
+    });
+
+    try {
+      const { rows } = await query(
+        `INSERT INTO calendar_accounts 
+         (provider, access_token, refresh_token, valid_from, valid_to, user_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [data.provider, data.access_token, data.refresh_token, data.valid_from, data.valid_to, data.user_id]
+      );
+      console.log('Calendar account created successfully:', { id: rows[0].id });
+      return rows[0];
+    } catch (error) {
+      console.error('Error creating calendar account:', error);
+      throw error;
+    }
   },
 
   // Get calendar accounts for a user
