@@ -15,6 +15,7 @@ export default function HomeLayout({
 
   const getPageTitle = () => {
     if (pathname === '/home/settings') return 'Settings'
+    if (pathname === '/home/calendar') return 'Calendar'
     return 'Dashboard'
   }
 
@@ -37,7 +38,7 @@ export default function HomeLayout({
           </div>
 
           {/* Page content */}
-          <main className="p-6">
+          <main className="p-2">
             {children}
           </main>
         </div>
