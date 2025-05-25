@@ -14,7 +14,7 @@ export default function CalendarPage() {
       {/* Top section with month view and day/week view */}
       <div className="flex gap-4 h-[33vh] min-h-[200px]">
         {/* Left side - Month View */}
-        <div className="bg-white rounded-lg shadow p-2">
+        <div className="w-[320px] bg-white rounded-lg shadow p-2">
           <MonthView
             selectedDate={selectedDate}
             onDateSelect={(date) => {
@@ -38,9 +38,60 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Bottom section - Map placeholder */}
-      <div className="flex-1 min-h-0 bg-white rounded-lg shadow flex flex-col">
-        <div className="flex-1 min-h-[300px]">
+      {/* Bottom section with appointment card and map */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Left side - New Appointment Card */}
+        <div className="w-[320px] bg-white rounded-lg shadow p-2">
+          <div className="p-2">
+            <h3 className="text-lg font-semibold mb-4">Create New Appointment</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter appointment title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter address"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  readOnly
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Map View */}
+        <div className="flex-1 bg-white rounded-lg shadow p-4">
           <MapView />
         </div>
       </div>
