@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { decrypt, encrypt } from './encryption'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set')
@@ -79,11 +80,21 @@ export const calendarAccounts = {
       'SELECT * FROM calendar_accounts WHERE user_id = $1',
       [userId]
     );
-    return rows;
+    
+    // Decrypt refresh tokens
+    return rows.map(row => ({
+      ...row,
+      refresh_token: row.refresh_token ? decrypt(row.refresh_token) : null
+    }));
   },
 
   // Update a calendar account
   async update(id: string, data: Partial<CalendarAccount>) {
+    // If refresh_token is being updated, ensure it's encrypted
+    if (data.refresh_token) {
+      data.refresh_token = encrypt(data.refresh_token)
+    }
+
     const setClause = Object.keys(data)
       .map((key, index) => `${key} = $${index + 2}`)
       .join(', ');
@@ -96,6 +107,11 @@ export const calendarAccounts = {
        RETURNING *`,
       [id, ...values]
     );
+
+    // Decrypt refresh token in response
+    if (rows[0]) {
+      rows[0].refresh_token = rows[0].refresh_token ? decrypt(rows[0].refresh_token) : null
+    }
     return rows[0];
   },
 

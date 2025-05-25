@@ -6,6 +6,7 @@ import { exchangeMicrosoftToken, exchangeGoogleToken } from '@/lib/oauth'
 import { calendarAccounts } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { encrypt } from '@/lib/encryption'
 
 export default async function OAuthCallback({
   searchParams,
@@ -41,11 +42,14 @@ export default async function OAuthCallback({
       redirect('/home/settings?error=invalid_state')
     }
 
+    // Encrypt the refresh token before storing
+    const encryptedRefreshToken = tokenResponse.refresh_token ? encrypt(tokenResponse.refresh_token) : null
+
     // Save the calendar account to the database
     await calendarAccounts.create({
       provider,
       access_token: tokenResponse.access_token,
-      refresh_token: tokenResponse.refresh_token,
+      refresh_token: encryptedRefreshToken,
       valid_from: new Date(),
       valid_to: new Date(Date.now() + tokenResponse.expires_in * 1000),
       user_id: session.user.id
