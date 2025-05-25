@@ -22,7 +22,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 bg-white shadow-lg h-full min-h-0 flex flex-col self-stretch">
       <div className="h-16 flex items-center justify-center border-b">
         <h1 className="text-xl font-bold text-gray-800">Field Appointment Planner</h1>
       </div>

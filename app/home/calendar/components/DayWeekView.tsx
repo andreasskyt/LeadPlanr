@@ -37,16 +37,16 @@ export default function DayWeekView({ selectedDate, viewMode }: DayWeekViewProps
   const renderDayView = () => {
     return (
       <div className="h-full">
-        <div className="text-xl font-semibold mb-4">
+        <div className="text-base font-semibold mb-2">
           {formatDate(selectedDate)}
         </div>
-        <div className="h-[calc(100%-3rem)] overflow-y-auto">
+        <div className="h-[calc(100%-2rem)] overflow-y-auto">
           {hours.map((hour) => (
             <div key={hour} className="flex border-b border-gray-200">
-              <div className="w-16 p-2 text-sm text-gray-500">
+              <div className="w-12 p-1 text-xs text-gray-500">
                 {hour.toString().padStart(2, '0')}:00
               </div>
-              <div className="flex-1 p-2 min-h-[60px]">
+              <div className="flex-1 p-1 min-h-[28px]">
                 {/* Appointment slots will go here */}
               </div>
             </div>
@@ -61,22 +61,22 @@ export default function DayWeekView({ selectedDate, viewMode }: DayWeekViewProps
     
     return (
       <div className="h-full">
-        <div className="grid grid-cols-8 gap-0 mb-2">
+        <div className="grid grid-cols-8 gap-0 mb-1">
           <div></div>
           {weekDates.map((date) => (
-            <div key={date.toISOString()} className="text-center font-semibold">
+            <div key={date.toISOString()} className="text-center font-semibold text-xs">
               {formatHeader(date)}
             </div>
           ))}
         </div>
-        <div className="h-[calc(100%-3rem)] overflow-y-auto">
+        <div className="h-[calc(100%-1.5rem)] overflow-y-auto">
           {hours.map((hour) => (
             <div key={hour} className="grid grid-cols-8 border-b border-gray-200">
-              <div className="text-sm text-gray-500 p-2 text-right">
+              <div className="text-xs text-gray-500 p-1 text-right w-12">
                 {hour.toString().padStart(2, '0')}:00
               </div>
               {weekDates.map((date) => (
-                <div key={date.toISOString()} className="p-2 min-h-[60px] border-l border-gray-200">
+                <div key={date.toISOString()} className="p-1 min-h-[28px] border-l border-gray-200">
                   {/* Appointment slots will go here */}
                 </div>
               ))}

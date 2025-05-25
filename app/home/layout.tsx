@@ -20,13 +20,13 @@ export default function HomeLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex">
+    <div className="h-screen bg-gray-100">
+      <div className="flex min-h-0 items-stretch h-full">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main content */}
-        <div className="flex-1">
+        <div className="flex-1 min-h-0 flex flex-col h-full">
           {/* Top navigation */}
           <div className="bg-white shadow">
             <div className="flex justify-between items-center px-4 py-3">
@@ -38,7 +38,7 @@ export default function HomeLayout({
           </div>
 
           {/* Page content */}
-          <main className="p-2">
+          <main className="p-2 min-h-0 flex-1 flex flex-col">
             {children}
           </main>
         </div>

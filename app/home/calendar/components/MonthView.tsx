@@ -110,8 +110,8 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
         </div>
         <div className="grid grid-cols-8 gap-0.5 text-xs">
           <div></div>
-          {weekDays.map((d) => (
-            <div key={d} className="text-center text-gray-500 font-medium">{d}</div>
+          {weekDays.map((d, idx) => (
+            <div key={d + idx} className="text-center text-gray-500 font-medium">{d}</div>
           ))}
           {weeks.map((week, weekIdx) => {
             // Skip the last week if all days are in the next month
@@ -119,10 +119,9 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
             const allDaysInNextMonth = week.days.every(day => day.getMonth() !== month);
             if (isLastWeek && allDaysInNextMonth) return null;
             return (
-              <>
+              <div key={week.weekNumber + '-' + weekIdx} className="contents">
                 <button
                   type="button"
-                  key={week.weekNumber + '-num'}
                   className={`text-center cursor-pointer font-medium select-none focus:outline-none px-2 py-1
                     ${viewMode === 'week' && isDateInWeek(selectedDate, week.days) ? 'bg-blue-500 text-white rounded' : 'text-gray-400 hover:bg-gray-200 rounded'}
                   `}
@@ -165,7 +164,7 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
                     </button>
                   );
                 })}
-              </>
+              </div>
             );
           })}
         </div>
