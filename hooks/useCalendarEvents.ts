@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react';
 import { CalendarEvent, calendarService } from '@/lib/calendar-service';
 import { CalendarAccount } from '@/lib/db';
 
+function getWeekRange(date: Date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  // Monday as first day of week
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((day + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+}
+
 export function useCalendarEvents(
   accounts: CalendarAccount[],
   selectedDate: Date,
@@ -25,20 +38,9 @@ export function useCalendarEvents(
       setError(null);
 
       try {
-        const startDate = new Date(selectedDate);
-        startDate.setHours(0, 0, 0, 0);
-
-        const endDate = new Date(selectedDate);
-        if (viewMode === 'day') {
-          endDate.setHours(23, 59, 59, 999);
-        } else {
-          // For week view, get events for the entire week
-          endDate.setDate(endDate.getDate() + 6);
-          endDate.setHours(23, 59, 59, 999);
-        }
-
-        const fetchedEvents = await calendarService.fetchEvents(accounts, startDate, endDate);
-        
+        // Always fetch for the week containing the selected date
+        const { start, end } = getWeekRange(selectedDate);
+        const fetchedEvents = await calendarService.fetchEvents(accounts, start, end);
         if (isMounted) {
           setEvents(fetchedEvents);
           setLoading(false);
