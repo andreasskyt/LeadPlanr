@@ -49,13 +49,13 @@ export async function query(text: string, params?: any[]) {
 
 // Calendar account types
 export interface CalendarAccount {
-  id: string;
+  id: number;
   provider: string;
   access_token: string;
   refresh_token: string | null;
   valid_from: Date;
   valid_to: Date | null;
-  user_id: string;
+  user_id: number;
   created_at: Date;
   updated_at: Date;
 }
