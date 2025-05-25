@@ -108,10 +108,10 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
             {'>'}
           </button>
         </div>
-        <div className="grid grid-cols-8 gap-0.5 text-xs">
+        <div className="grid grid-cols-8 gap-px text-xs">
           <div></div>
           {weekDays.map((d, idx) => (
-            <div key={d + idx} className="text-center text-gray-500 font-medium">{d}</div>
+            <div key={d + idx} className="text-center text-gray-500 font-medium w-8">{d}</div>
           ))}
           {weeks.map((week, weekIdx) => {
             // Skip the last week if all days are in the next month
@@ -122,7 +122,7 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
               <div key={week.weekNumber + '-' + weekIdx} className="contents">
                 <button
                   type="button"
-                  className={`text-center cursor-pointer font-medium select-none focus:outline-none px-2 py-1
+                  className={`text-center cursor-pointer font-medium select-none focus:outline-none px-1 py-1 w-8
                     ${viewMode === 'week' && isDateInWeek(selectedDate, week.days) ? 'bg-blue-500 text-white rounded' : 'text-gray-400 hover:bg-gray-200 rounded'}
                   `}
                   onClick={() => onWeekSelect(week.days[0])}
@@ -144,13 +144,13 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
                     <button
                       type="button"
                       key={i + '-' + day.toISOString()}
-                      className={`text-center cursor-pointer rounded-full mx-auto w-6 h-6 flex items-center justify-center select-none focus:outline-none
+                      className={`text-center cursor-pointer rounded-full mx-auto w-8 h-8 flex items-center justify-center select-none focus:outline-none
                         ${isCurrentMonth ? '' : 'text-gray-300'}
                         ${isPast && isCurrentMonth ? 'text-gray-400' : ''}
                         ${isToday && isCurrentMonth ? 'border border-blue-500 font-bold' : ''}
                         ${viewMode === 'day' && isSelected && isCurrentMonth ? 'bg-blue-500 text-white font-bold' : ''}
                         ${viewMode === 'week' && isDateInWeek(selectedDate, week.days) ? 'bg-blue-100' : ''}
-                        hover:bg-gray-100
+                        hover:bg-gray-100'
                       `}
                       onClick={() => onDateSelect(day)}
                       tabIndex={-1}
@@ -173,7 +173,7 @@ export default function MonthView({ selectedDate, onDateSelect, onWeekSelect, vi
   };
 
   return (
-    <div className="h-full overflow-y-auto" style={{ width: 320 }}>
+    <div className="h-full overflow-y-auto pr-3" style={{ width: 320 }}>
       {renderMonth(displayedMonth)}
     </div>
   );
