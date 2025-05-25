@@ -1,13 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MonthView from './components/MonthView';
-import DayWeekView from './components/DayWeekView';
+import DayWeekView from '@/app/home/calendar/components/DayWeekView';
 import MapView from './components/MapView';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { CalendarAccount } from '@/lib/db';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
+  const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await fetch('/api/calendar-accounts');
+        if (!response.ok) throw new Error('Failed to fetch calendar accounts');
+        const data = await response.json();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error fetching calendar accounts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
+
+  const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(
+    accounts,
+    selectedDate,
+    viewMode
+  );
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -34,6 +61,9 @@ export default function CalendarPage() {
           <DayWeekView
             selectedDate={selectedDate}
             viewMode={viewMode}
+            events={events}
+            loading={eventsLoading}
+            error={eventsError}
           />
         </div>
       </div>
