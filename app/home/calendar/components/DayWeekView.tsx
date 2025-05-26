@@ -2,6 +2,7 @@
 
 import { CalendarEvent } from '@/lib/calendar-service';
 import React from 'react';
+import Link from 'next/link';
 
 interface DayWeekViewProps {
   selectedDate: Date;
@@ -9,6 +10,7 @@ interface DayWeekViewProps {
   events: CalendarEvent[];
   loading: boolean;
   error: string | null;
+  showOverlay?: boolean;
 }
 
 const HOUR_ROW_HEIGHT = 32; // px
@@ -28,7 +30,7 @@ function getDayEnd(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
-export default function DayWeekView({ selectedDate, viewMode, events, loading, error }: DayWeekViewProps) {
+export default function DayWeekView({ selectedDate, viewMode, events, loading, error, showOverlay }: DayWeekViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   // Robust week calculation: always returns Monday-Sunday, does not mutate input
@@ -206,8 +208,20 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full relative">
       {viewMode === 'day' ? renderDayView() : renderWeekView()}
+      {showOverlay && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="text-lg font-semibold text-gray-700 mb-2">No calendar available.</div>
+            <div className="text-gray-500">
+              Go to{' '}
+              <Link href="/home/settings" className="text-blue-600 underline hover:text-blue-800">Settings</Link>
+              {' '}to give access to your calendar.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

@@ -64,6 +64,7 @@ export default function CalendarPage() {
             events={events}
             loading={eventsLoading}
             error={eventsError}
+            showOverlay={accounts.length === 0}
           />
         </div>
       </div>
