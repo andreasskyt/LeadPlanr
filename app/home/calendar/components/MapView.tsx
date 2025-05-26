@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { GoogleMap, useJsApiLoader, MarkerF, Polyline } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, MarkerF, Polyline, InfoWindow } from "@react-google-maps/api";
 import { CalendarEvent } from '@/lib/calendar-service';
 import { DAY_COLORS } from './DayWeekView';
 
@@ -11,9 +11,11 @@ interface MapViewProps {
   events: (CalendarEvent & { lat?: number; long?: number; dayIndex?: number; dayOfWeekIdx?: number })[];
   eventsByDay: Record<string, (CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number })[]>;
   loading?: boolean;
+  hoveredEventId?: string | null;
+  setHoveredEventId?: (id: string | null) => void;
 }
 
-export default function MapView({ events, eventsByDay, loading }: MapViewProps) {
+export default function MapView({ events, eventsByDay, loading, hoveredEventId, setHoveredEventId }: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [locationLoaded, setLocationLoaded] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -97,17 +99,29 @@ export default function MapView({ events, eventsByDay, loading }: MapViewProps) 
         <MarkerF
           key={event.id}
           position={{ lat: event.lat!, lng: event.long! }}
-          label={event.dayIndex ? { text: String(event.dayIndex), color: 'white', fontWeight: 'bold', fontSize: '16px' } : undefined}
+          label={event.dayIndex ? { text: String(event.dayIndex), color: 'white', fontWeight: 'bold', fontSize: hoveredEventId === event.id ? '20px' : '16px' } : undefined}
           title={event.title + (event.location ? ` (${event.location})` : '')}
           icon={{
             path: window.google?.maps.SymbolPath.CIRCLE,
-            scale: 12,
+            scale: hoveredEventId === event.id ? 18 : 12,
             fillColor: DAY_COLORS[event.dayOfWeekIdx ?? 0],
             fillOpacity: 1,
-            strokeColor: '#222',
-            strokeWeight: 2,
+            strokeColor: hoveredEventId === event.id ? '#1e40af' : '#222',
+            strokeWeight: hoveredEventId === event.id ? 4 : 2,
           }}
-        />
+          onMouseOver={() => setHoveredEventId && setHoveredEventId(event.id)}
+          onMouseOut={() => setHoveredEventId && setHoveredEventId(null)}
+        >
+          {hoveredEventId === event.id && event.lat && event.long && (
+            <InfoWindow position={{ lat: event.lat, lng: event.long }} onCloseClick={() => setHoveredEventId && setHoveredEventId(null)}>
+              <div className="min-w-[180px]">
+                <div className="font-semibold text-base mb-1">{event.title}</div>
+                {event.location && <div className="text-xs text-gray-600 mb-1">{event.location}</div>}
+                <div className="text-xs">{new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+            </InfoWindow>
+          )}
+        </MarkerF>
       ))}
     </GoogleMap>
   );

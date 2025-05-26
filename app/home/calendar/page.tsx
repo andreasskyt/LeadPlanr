@@ -14,6 +14,7 @@ export default function CalendarPage() {
   const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [locationMap, setLocationMap] = useState<Record<string, { lat: number; long: number }>>({});
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -155,6 +156,8 @@ export default function CalendarPage() {
             loading={eventsLoading}
             error={eventsError}
             showOverlay={accounts.length === 0}
+            hoveredEventId={hoveredEventId}
+            setHoveredEventId={setHoveredEventId}
           />
         </div>
       </div>
@@ -213,7 +216,7 @@ export default function CalendarPage() {
 
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <MapView events={mapEvents} eventsByDay={mapEventsByDay} loading={eventsLoading} />
+          <MapView events={mapEvents} eventsByDay={mapEventsByDay} loading={eventsLoading} hoveredEventId={hoveredEventId} setHoveredEventId={setHoveredEventId} />
         </div>
       </div>
     </div>

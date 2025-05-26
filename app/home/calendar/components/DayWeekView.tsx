@@ -11,6 +11,8 @@ interface DayWeekViewProps {
   loading: boolean;
   error: string | null;
   showOverlay?: boolean;
+  hoveredEventId?: string | null;
+  setHoveredEventId?: (id: string | null) => void;
 }
 
 const HOUR_ROW_HEIGHT = 32; // px
@@ -63,7 +65,7 @@ function LocationIcon({ className = '', size = 14 }: { className?: string; size?
   );
 }
 
-export default function DayWeekView({ selectedDate, viewMode, events, loading, error, showOverlay }: DayWeekViewProps) {
+export default function DayWeekView({ selectedDate, viewMode, events, loading, error, showOverlay, hoveredEventId, setHoveredEventId }: DayWeekViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   // Robust week calculation: always returns Monday-Sunday, does not mutate input
@@ -136,16 +138,20 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     return (
       <div
         key={event.id}
-        className="absolute left-0 right-0 mx-1 px-2 py-1 text-xs rounded overflow-hidden shadow"
+        className={
+          `absolute left-0 right-0 mx-1 px-2 py-1 text-xs rounded overflow-hidden shadow transition-all duration-150 ${hoveredEventId === event.id ? 'ring-2 ring-blue-500 z-20 scale-[1.03]' : ''}`
+        }
         style={{
           top: `${topPx}px`,
           height: `${heightPx}px`,
           minHeight: `${minHeightPx}px`,
           backgroundColor: colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'),
           color: 'white',
-          zIndex: 10,
+          zIndex: hoveredEventId === event.id ? 20 : 10,
         }}
         title={`${event.title} (${formatTime(start)} - ${formatTime(end)})`}
+        onMouseEnter={() => setHoveredEventId && setHoveredEventId(event.id)}
+        onMouseLeave={() => setHoveredEventId && setHoveredEventId(null)}
       >
         <div className="font-medium truncate flex items-center gap-1">
           {event.title}
