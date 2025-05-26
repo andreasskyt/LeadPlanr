@@ -1,16 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { GoogleMap, useJsApiLoader, MarkerF } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, MarkerF, Polyline } from "@react-google-maps/api";
 import { CalendarEvent } from '@/lib/calendar-service';
 
 const DEFAULT_CENTER = { lat: 55.6761, lng: 12.5683 }; // Copenhagen as fallback
 const RADIUS_METERS = 300000; // 300km
 
 interface MapViewProps {
-  events: (CalendarEvent & { lat?: number; long?: number })[];
+  events: (CalendarEvent & { lat?: number; long?: number; dayIndex?: number })[];
+  eventsByDay: Record<string, (CalendarEvent & { lat: number; long: number; dayIndex: number })[]>;
 }
 
-export default function MapView({ events }: MapViewProps) {
+export default function MapView({ events, eventsByDay }: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [locationLoaded, setLocationLoaded] = useState(false);
 
@@ -50,14 +51,24 @@ export default function MapView({ events }: MapViewProps) {
         fullscreenControl: false,
       }}
     >
-      {events.filter(e => e.lat && e.long).map(event => (
-        <div key={event.id}>
-          {/* Marker will be rendered here by MarkerF below */}
-          <MarkerF
-            position={{ lat: event.lat!, lng: event.long! }}
-            title={event.title + (event.location ? ` (${event.location})` : '')}
+      {/* Draw lines for each day */}
+      {Object.values(eventsByDay).map((dayEvents, i) => (
+        dayEvents.length > 1 ? (
+          <Polyline
+            key={"poly-" + i}
+            path={dayEvents.map(e => ({ lat: e.lat, lng: e.long }))}
+            options={{ strokeColor: '#2563eb', strokeOpacity: 0.7, strokeWeight: 3 }}
           />
-        </div>
+        ) : null
+      ))}
+      {/* Markers with indexes */}
+      {events.filter(e => e.lat && e.long).map(event => (
+        <MarkerF
+          key={event.id}
+          position={{ lat: event.lat!, lng: event.long! }}
+          label={event.dayIndex ? { text: String(event.dayIndex), color: 'white', fontWeight: 'bold', fontSize: '16px' } : undefined}
+          title={event.title + (event.location ? ` (${event.location})` : '')}
+        />
       ))}
     </GoogleMap>
   );

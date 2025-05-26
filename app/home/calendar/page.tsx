@@ -6,6 +6,7 @@ import DayWeekView from '@/app/home/calendar/components/DayWeekView';
 import MapView from './components/MapView';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { CalendarAccount } from '@/lib/db';
+import { CalendarEvent } from '@/lib/calendar-service';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -66,6 +67,32 @@ export default function CalendarPage() {
       ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long }
       : e
   );
+
+  // Helper: group events with locations by day and assign index
+  type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex?: number };
+
+  type EventsByDay = Record<string, LocatedEvent[]>;
+
+  function getIndexedEventsByDay(events: LocatedEvent[]): EventsByDay {
+    const byDay: EventsByDay = {};
+    events.forEach((e) => {
+      if (!e.location || !e.lat || !e.long) return;
+      const dayKey = new Date(e.start).toISOString().split('T')[0];
+      if (!byDay[dayKey]) byDay[dayKey] = [];
+      byDay[dayKey].push(e);
+    });
+    // Sort and assign index
+    Object.values(byDay).forEach((dayEvents) => {
+      dayEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+      dayEvents.forEach((e, i) => { e.dayIndex = i + 1; });
+    });
+    return byDay;
+  }
+
+  const indexedEventsByDay = getIndexedEventsByDay(eventsWithLocation as LocatedEvent[]);
+
+  // Flatten for MapView
+  const indexedEvents: LocatedEvent[] = Object.values(indexedEventsByDay).flat();
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -154,7 +181,7 @@ export default function CalendarPage() {
 
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <MapView events={eventsWithLocation} />
+          <MapView events={indexedEvents} eventsByDay={indexedEventsByDay} />
         </div>
       </div>
     </div>
