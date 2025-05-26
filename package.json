@@ -19,6 +19,7 @@
     "@types/csurf": "^1.11.5",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/pg": "^8.15.2",
+    "@vis.gl/react-google-maps": "^1.5.2",
     "bcrypt": "^5.1.1",
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
