@@ -96,7 +96,9 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     const startMinutes = (start.getHours() * 60) + start.getMinutes();
     const endMinutes = (end.getHours() * 60) + end.getMinutes();
     const topPx = (startMinutes / 60) * HOUR_ROW_HEIGHT;
-    const heightPx = ((endMinutes - startMinutes) / 60) * HOUR_ROW_HEIGHT;
+    let heightPx = ((endMinutes - startMinutes) / 60) * HOUR_ROW_HEIGHT;
+    const minHeightPx = 20;
+    if (heightPx < minHeightPx) heightPx = minHeightPx;
 
     return (
       <div
@@ -105,6 +107,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
         style={{
           top: `${topPx}px`,
           height: `${heightPx}px`,
+          minHeight: `${minHeightPx}px`,
           backgroundColor: event.provider === 'google' ? '#4285F4' : '#0078D4',
           color: 'white',
           zIndex: 10,
