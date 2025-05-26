@@ -48,6 +48,26 @@ function Polylines({ eventsByDay }: { eventsByDay: MapViewProps['eventsByDay'] }
   return null;
 }
 
+// Helper component to handle map bounds
+function MapBounds({ events }: { events: MapViewProps['events'] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || events.length === 0) return;
+
+    const bounds = new google.maps.LatLngBounds();
+    events.forEach(event => {
+      if (event.lat && event.long) {
+        bounds.extend({ lat: event.lat, lng: event.long });
+      }
+    });
+
+    map.fitBounds(bounds);
+  }, [map, events]);
+
+  return null;
+}
+
 export default function MapView({ events, eventsByDay, loading, hoveredEventId, setHoveredEventId }: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [locationLoaded, setLocationLoaded] = useState(false);
@@ -83,6 +103,8 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
       >
         {/* Draw lines for each day using imperative API */}
         <Polylines eventsByDay={eventsByDay} />
+        {/* Handle map bounds */}
+        <MapBounds events={events} />
         {/* Markers with indexes */}
         {events.filter(e => e.lat && e.long).map(event => (
           <AdvancedMarker
