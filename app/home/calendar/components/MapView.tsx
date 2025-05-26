@@ -100,7 +100,11 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
               <span style={{ fontWeight: 'bold', fontSize: hoveredEventId === event.id ? 20 : 16 }}>{event.dayIndex}</span>
             </Pin>
             {hoveredEventId === event.id && event.lat && event.long && (
-              <InfoWindow position={{ lat: event.lat, lng: event.long }} onClose={() => setHoveredEventId && setHoveredEventId(null)}>
+              <InfoWindow 
+                position={{ lat: event.lat, lng: event.long }}
+                pixelOffset={[0, -40]}
+                onClose={() => setHoveredEventId && setHoveredEventId(null)}
+              >
                 <div className="min-w-[180px]">
                   <div className="font-semibold text-base mb-1">{event.title}</div>
                   {event.location && <div className="text-xs text-gray-600 mb-1">{event.location}</div>}
