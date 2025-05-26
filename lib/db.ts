@@ -88,7 +88,7 @@ export interface CalendarAccount {
 
 // Calendar account operations
 export const calendarAccounts = {
-  // Create a new calendar account
+  // Create a new calendar account (and encrypt the refresh token)
   async create(data: Omit<CalendarAccount, 'id' | 'created_at' | 'updated_at'>) {
     console.log('Creating calendar account with data:', {
       ...data,
@@ -158,8 +158,9 @@ export const calendarAccounts = {
     return result.rows[0]
   },
 
-  // Update a calendar account
+  // Update a calendar account (and encrypt the refresh token)
   async update(id: string | number, data: Partial<CalendarAccount>) {
+    const encryptedRefreshToken = data.refresh_token ? encrypt(data.refresh_token) : null;
     const result = await query<CalendarAccount>(
       `UPDATE calendar_accounts
        SET provider = COALESCE($1, provider),
@@ -173,7 +174,7 @@ export const calendarAccounts = {
       [
         data.provider,
         data.access_token,
-        data.refresh_token,
+        encryptedRefreshToken,
         data.valid_from,
         data.valid_to,
         data.user_id,

@@ -16,6 +16,17 @@ interface DayWeekViewProps {
 const HOUR_ROW_HEIGHT = 32; // px
 const TIME_COL_WIDTH = 48; // px
 
+// Day color palette (Monday=0, Sunday=6)
+export const DAY_COLORS = [
+  '#22c55e', // Monday - green
+  '#38bdf8', // Tuesday - light blue
+  '#fbbf24', // Wednesday - yellow
+  '#f472b6', // Thursday - pink
+  '#a78bfa', // Friday - purple
+  '#f87171', // Saturday - red
+  '#60a5fa', // Sunday - blue
+];
+
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -105,7 +116,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
   };
 
   // Render a single event block for a day
-  const renderEventBlock = (event: CalendarEvent, day: Date) => {
+  const renderEventBlock = (event: CalendarEvent, day: Date, colorOverride?: string) => {
     const dayStart = getDayStart(day);
     const dayEnd = getDayEnd(day);
     const eventStart = new Date(event.start);
@@ -130,7 +141,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
           top: `${topPx}px`,
           height: `${heightPx}px`,
           minHeight: `${minHeightPx}px`,
-          backgroundColor: event.provider === 'google' ? '#4285F4' : '#0078D4',
+          backgroundColor: colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'),
           color: 'white',
           zIndex: 10,
         }}
@@ -236,7 +247,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
           <div className="absolute grid" style={{gridTemplateColumns: `repeat(7, 1fr)`, left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0, pointerEvents: 'none'}}>
             {weekDates.map((date, idx) => (
               <div key={date.toISOString()} className="relative h-full" style={{pointerEvents: 'auto'}}>
-                {getEventsForDay(date).map(event => renderEventBlock(event, date))}
+                {getEventsForDay(date).map(event => renderEventBlock(event, date, DAY_COLORS[idx]))}
               </div>
             ))}
           </div>

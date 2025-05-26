@@ -62,15 +62,15 @@ export default function CalendarPage() {
   }, [events]);
 
   // Merge lat/long into events
-  const eventsWithLocation = events.map(e =>
+  type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
+
+  const eventsWithLocation: LocatedEvent[] = events.map(e =>
     e.location && locationMap[e.location]
-      ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long }
-      : e
-  );
+      ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long, dayIndex: 0, dayOfWeekIdx: 0 }
+      : { ...e, dayIndex: 0, dayOfWeekIdx: 0 }
+  ) as LocatedEvent[];
 
   // Helper: group events with locations by day and assign index
-  type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex?: number };
-
   type EventsByDay = Record<string, LocatedEvent[]>;
 
   function getIndexedEventsByDay(events: LocatedEvent[]): EventsByDay {
@@ -81,18 +81,50 @@ export default function CalendarPage() {
       if (!byDay[dayKey]) byDay[dayKey] = [];
       byDay[dayKey].push(e);
     });
-    // Sort and assign index
-    Object.values(byDay).forEach((dayEvents) => {
+    // Sort and assign index, and set dayOfWeekIdx (Monday=0, Sunday=6)
+    Object.entries(byDay).forEach(([dayKey, dayEvents]) => {
       dayEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-      dayEvents.forEach((e, i) => { e.dayIndex = i + 1; });
+      const dayOfWeekIdx = (new Date(dayKey).getDay() + 6) % 7;
+      dayEvents.forEach((e, i) => {
+        (e as any).dayIndex = i + 1;
+        (e as any).dayOfWeekIdx = dayOfWeekIdx;
+      });
     });
     return byDay;
   }
 
-  const indexedEventsByDay = getIndexedEventsByDay(eventsWithLocation as LocatedEvent[]);
+  const indexedEventsByDay = getIndexedEventsByDay(eventsWithLocation);
 
   // Flatten for MapView
   const indexedEvents: LocatedEvent[] = Object.values(indexedEventsByDay).flat();
+
+  // Helper for local day comparison
+  function isSameLocalDay(a: Date, b: Date) {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
+  }
+
+  // Filter for map: if day view, only show that day's events; if week, show all
+  let mapEvents = indexedEvents;
+  if (viewMode === 'day') {
+    mapEvents = indexedEvents.filter(e => isSameLocalDay(new Date(e.start), selectedDate));
+  }
+
+  // Always rebuild mapEventsByDay from mapEvents (no extra filtering)
+  function getEventsByDay(events: LocatedEvent[]): Record<string, LocatedEvent[]> {
+    const byDay: Record<string, LocatedEvent[]> = {};
+    events.forEach(e => {
+      if (!e.location || !e.lat || !e.long) return;
+      const dayKey = new Date(e.start).toISOString().split('T')[0];
+      if (!byDay[dayKey]) byDay[dayKey] = [];
+      byDay[dayKey].push(e);
+    });
+    return byDay;
+  }
+  const mapEventsByDay = getEventsByDay(mapEvents);
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -181,7 +213,7 @@ export default function CalendarPage() {
 
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <MapView events={indexedEvents} eventsByDay={indexedEventsByDay} />
+          <MapView events={mapEvents} eventsByDay={mapEventsByDay} loading={eventsLoading} />
         </div>
       </div>
     </div>
