@@ -95,6 +95,7 @@ export const calendarAccounts = {
       access_token: data.access_token ? '[REDACTED]' : undefined,
       refresh_token: data.refresh_token ? '[REDACTED]' : undefined
     })
+    const encryptedRefreshToken = data.refresh_token ? encrypt(data.refresh_token) : null;
     const result = await query<CalendarAccount>(
       `INSERT INTO calendar_accounts (
         provider,
@@ -108,7 +109,7 @@ export const calendarAccounts = {
       [
         data.provider,
         data.access_token,
-        data.refresh_token,
+        encryptedRefreshToken,
         data.valid_from,
         data.valid_to,
         data.user_id
@@ -120,10 +121,22 @@ export const calendarAccounts = {
 
   // Get calendar accounts for a user
   async getByUserId(userId: string) {
-    return query<CalendarAccount>(
+    const result = await query<CalendarAccount>(
       'SELECT * FROM calendar_accounts WHERE user_id = $1',
       [userId]
     ).then(result => result.rows)
+
+    // Decrypt refresh tokens for all accounts
+    return result.map(account => {
+      if (account.refresh_token) {
+        try {
+          account.refresh_token = decrypt(account.refresh_token)
+        } catch (err) {
+          throw new Error('Failed to decrypt refresh token: token is not encrypted or is corrupted')
+        }
+      }
+      return account
+    })
   },
 
   // Get a calendar account by ID
@@ -135,7 +148,11 @@ export const calendarAccounts = {
     if (result.rows[0]) {
       // Decrypt the refresh token if it exists
       if (result.rows[0].refresh_token) {
-        result.rows[0].refresh_token = decrypt(result.rows[0].refresh_token)
+        try {
+          result.rows[0].refresh_token = decrypt(result.rows[0].refresh_token)
+        } catch (err) {
+          throw new Error('Failed to decrypt refresh token: token is not encrypted or is corrupted')
+        }
       }
     }
     return result.rows[0]

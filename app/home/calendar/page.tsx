@@ -12,6 +12,7 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
   const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locationMap, setLocationMap] = useState<Record<string, { lat: number; long: number }>>({});
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -34,6 +35,36 @@ export default function CalendarPage() {
     accounts,
     selectedDate,
     viewMode
+  );
+
+  // Fetch lat/long for all unique event locations
+  useEffect(() => {
+    const uniqueLocations = Array.from(new Set(events.map(e => e.location).filter(Boolean)));
+    if (uniqueLocations.length === 0) {
+      setLocationMap({});
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/resolve-locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations: uniqueLocations }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled) setLocationMap(data);
+      })
+      .catch(() => {
+        if (!cancelled) setLocationMap({});
+      });
+    return () => { cancelled = true; };
+  }, [events]);
+
+  // Merge lat/long into events
+  const eventsWithLocation = events.map(e =>
+    e.location && locationMap[e.location]
+      ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long }
+      : e
   );
 
   return (
@@ -123,7 +154,7 @@ export default function CalendarPage() {
 
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <MapView />
+          <MapView events={eventsWithLocation} />
         </div>
       </div>
     </div>

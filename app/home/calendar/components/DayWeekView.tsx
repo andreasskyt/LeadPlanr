@@ -30,6 +30,28 @@ function getDayEnd(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
+// Inline SVG for location icon
+function LocationIcon({ className = '', size = 14 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 2C6.686 2 4 4.686 4 8c0 4.418 5.25 9.54 5.47 9.75a1 1 0 0 0 1.06 0C10.75 17.54 16 12.418 16 8c0-3.314-2.686-6-6-6zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+        fill="#fff"
+        stroke="#fff"
+        strokeWidth="0.5"
+      />
+      <circle cx="10" cy="8" r="2" fill="#2563eb" />
+    </svg>
+  );
+}
+
 export default function DayWeekView({ selectedDate, viewMode, events, loading, error, showOverlay }: DayWeekViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -114,10 +136,23 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
         }}
         title={`${event.title} (${formatTime(start)} - ${formatTime(end)})`}
       >
-        <div className="font-medium truncate">{event.title}</div>
+        <div className="font-medium truncate flex items-center gap-1">
+          {event.title}
+          {event.location && (
+            <span className="flex items-center ml-1" title={event.location}>
+              <LocationIcon size={12} className="inline-block align-middle" />
+            </span>
+          )}
+        </div>
         <div className="text-xs opacity-90 truncate">
           {formatTime(start)} - {formatTime(end)}
         </div>
+        {event.location && (
+          <div className="text-xs opacity-80 truncate flex items-center gap-1 mt-0.5">
+            <LocationIcon size={11} className="inline-block align-middle" />
+            <span>{event.location}</span>
+          </div>
+        )}
       </div>
     );
   };

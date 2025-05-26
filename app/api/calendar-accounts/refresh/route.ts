@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       const data = await response.json();
       newAccessToken = data.access_token;
       newRefreshToken = data.refresh_token
-        ? encrypt(data.refresh_token)
+        ? data.refresh_token
         : account.refresh_token;
     } else if (account.provider.toLowerCase() === 'microsoft') {
       const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       const data = await response.json();
       newAccessToken = data.access_token;
       newRefreshToken = data.refresh_token
-        ? encrypt(data.refresh_token)
+        ? data.refresh_token
         : account.refresh_token;
     } else {
       return new NextResponse('Unsupported provider', { status: 400 });

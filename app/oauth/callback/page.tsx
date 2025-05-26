@@ -77,20 +77,13 @@ export default async function OAuthCallback({
       tokenType: tokenResponse.token_type
     })
 
-    // Encrypt the refresh token before storing
-    const encryptedRefreshToken = tokenResponse.refresh_token ? encrypt(tokenResponse.refresh_token) : null
-    console.log('Refresh token handling:', {
-      received: !!tokenResponse.refresh_token,
-      encrypted: !!encryptedRefreshToken
-    })
-
     // Save the calendar account to the database
     console.log('Saving calendar account...')
     try {
       const savedAccount = await calendarAccounts.create({
         provider,
         access_token: tokenResponse.access_token,
-        refresh_token: encryptedRefreshToken,
+        refresh_token: tokenResponse.refresh_token,
         valid_from: new Date(),
         valid_to: new Date(Date.now() + tokenResponse.expires_in * 1000),
         user_id: decoded.userId
