@@ -51,9 +51,10 @@ function Polylines({ eventsByDay }: { eventsByDay: MapViewProps['eventsByDay'] }
 // Helper component to handle map bounds
 function MapBounds({ events }: { events: MapViewProps['events'] }) {
   const map = useMap();
+  const hasAdjustedBounds = useRef(false);
 
   useEffect(() => {
-    if (!map || events.length === 0) return;
+    if (!map || events.length === 0 || hasAdjustedBounds.current) return;
 
     const bounds = new google.maps.LatLngBounds();
     events.forEach(event => {
@@ -62,7 +63,10 @@ function MapBounds({ events }: { events: MapViewProps['events'] }) {
       }
     });
 
-    map.fitBounds(bounds);
+    // Add some padding to the bounds
+    const padding = { top: 50, right: 50, bottom: 50, left: 50 };
+    map.fitBounds(bounds, padding);
+    hasAdjustedBounds.current = true;
   }, [map, events]);
 
   return null;
@@ -126,10 +130,12 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
                 position={{ lat: event.lat, lng: event.long }}
                 pixelOffset={[0, -40]}
                 onClose={() => setHoveredEventId && setHoveredEventId(null)}
+                shouldFocus={false}
+                disableAutoPan={true}
               >
-                <div className="min-w-[180px]">
-                  <div className="font-semibold text-base mb-1">{event.title}</div>
-                  {event.location && <div className="text-xs text-gray-600 mb-1">{event.location}</div>}
+                <div className="min-w-[180px] max-w-[200px] max-h-[150px] overflow-hidden">
+                  <div className="font-semibold text-base mb-1 truncate">{event.title}</div>
+                  {event.location && <div className="text-xs text-gray-600 mb-1 truncate">{event.location}</div>}
                   <div className="text-xs">{new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               </InfoWindow>
