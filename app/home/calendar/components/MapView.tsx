@@ -37,16 +37,32 @@ function Polylines({ eventsByDay }: { eventsByDay: MapViewProps['eventsByDay'] }
     // Draw new polylines
     Object.values(eventsByDay).forEach(dayEvents => {
       if (dayEvents.length > 1) {
-        const path = dayEvents.map(e => ({ lat: e.lat, lng: e.long }));
-        const color = DAY_COLORS[dayEvents[0].dayOfWeekIdx ?? 0];
-        const polyline = new google.maps.Polyline({
-          path,
-          strokeColor: color,
-          strokeOpacity: 0.7,
-          strokeWeight: 3,
-          map,
-        });
-        polylinesRef.current.push(polyline);
+        for (let i = 0; i < dayEvents.length - 1; i++) {
+          const from = dayEvents[i];
+          const to = dayEvents[i + 1];
+          const isDashed = from.id === 'new-appointment' || to.id === 'new-appointment';
+          const color = DAY_COLORS[from.dayOfWeekIdx ?? 0];
+          const polyline = new google.maps.Polyline({
+            path: [
+              { lat: from.lat, lng: from.long },
+              { lat: to.lat, lng: to.long }
+            ],
+            strokeColor: color,
+            strokeOpacity: 0.9,
+            strokeWeight: 3,
+            map,
+            ...(isDashed ? {
+              strokeOpacity: 0,
+              strokeWeight: 4,
+              icons: [{
+                icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
+                offset: '0',
+                repeat: '15px'
+              }]
+            } : {})
+          });
+          polylinesRef.current.push(polyline);
+        }
       }
     });
     return () => {
@@ -128,12 +144,12 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
             onMouseLeave={() => setHoveredEventId && setHoveredEventId(null)}
           >
             <Pin
-              background={DAY_COLORS[event.dayOfWeekIdx ?? 0]}
-              borderColor={hoveredEventId === event.id ? '#1e40af' : '#222'}
+              background={event.id === 'new-appointment' ? '#e11d48' : DAY_COLORS[event.dayOfWeekIdx ?? 0]}
+              borderColor={event.id === 'new-appointment' ? '#be123c' : (hoveredEventId === event.id ? '#1e40af' : '#222')}
               glyphColor="white"
               scale={hoveredEventId === event.id ? 1.5 : 1}
             >
-              <span style={{ fontWeight: 'bold', fontSize: hoveredEventId === event.id ? 20 : 16 }}>{event.dayIndex}</span>
+              <span style={{ fontWeight: 'bold', fontSize: hoveredEventId === event.id ? 20 : 16 }}>{event.dayIndex || (event.id === 'new-appointment' ? '+' : '')}</span>
             </Pin>
             {hoveredEventId === event.id && event.lat && event.long && (
               <InfoWindow 

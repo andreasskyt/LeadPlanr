@@ -137,32 +137,6 @@ export default function CalendarPage() {
     mapEvents = indexedEvents.filter(e => isSameLocalDay(new Date(e.start), selectedDate));
   }
 
-  // Always rebuild mapEventsByDay from mapEvents (no extra filtering)
-  function getEventsByDay(events: LocatedEvent[]): Record<string, LocatedEvent[]> {
-    const byDay: Record<string, LocatedEvent[]> = {};
-    events.forEach(e => {
-      if (!e.location || !e.lat || !e.long) return;
-      const dayKey = new Date(e.start).toISOString().split('T')[0];
-      if (!byDay[dayKey]) byDay[dayKey] = [];
-      byDay[dayKey].push(e);
-    });
-    return byDay;
-  }
-  const mapEventsByDay = getEventsByDay(mapEvents);
-
-  // Compute new appointment marker info if location is resolved
-  const newAppointmentMarkerInfo = (location && locationMap[location])
-    ? {
-        lat: locationMap[location].lat,
-        long: locationMap[location].long,
-        location,
-        title,
-        startTime,
-        endTime,
-        date: newAppointmentDate
-      }
-    : null;
-
   // Prepare the events array for DayWeekView, including the new appointment if valid
   const isNewEventValid = !!(title && location && newAppointmentDate && startTime && endTime);
   let eventsForCalendar = events;
@@ -182,6 +156,65 @@ export default function CalendarPage() {
     };
     eventsForCalendar = [...events, newEvent];
   }
+
+  // Compute new appointment marker info if location is resolved
+  const newAppointmentMarkerInfo = (location && locationMap[location])
+    ? {
+        lat: locationMap[location].lat,
+        long: locationMap[location].long,
+        location,
+        title,
+        startTime,
+        endTime,
+        date: newAppointmentDate
+      }
+    : null;
+
+  // Add new appointment marker to mapEvents if valid and resolved
+  let mapEventsWithNew = mapEvents;
+  if (isNewEventValid && newAppointmentMarkerInfo) {
+    // Find the correct day key for the new appointment
+    const newEventDateObj = new Date(`${newAppointmentDate}T${startTime}`);
+    const newEventDayKey = newEventDateObj.toISOString().split('T')[0];
+    // Split mapEvents into before, same day, and after
+    const before: LocatedEvent[] = [];
+    const sameDay: LocatedEvent[] = [];
+    const after: LocatedEvent[] = [];
+    mapEvents.forEach(e => {
+      const eventDayKey = new Date(e.start).toISOString().split('T')[0];
+      if (eventDayKey < newEventDayKey) before.push(e);
+      else if (eventDayKey > newEventDayKey) after.push(e);
+      else sameDay.push(e);
+    });
+    // Insert the new appointment in order among sameDay events
+    const dayOfWeekIdx = (newEventDateObj.getDay() + 6) % 7; // Monday=0, Sunday=6
+    const newEventObj = {
+      ...newAppointmentMarkerInfo,
+      id: 'new-appointment',
+      title,
+      start: new Date(`${newAppointmentDate}T${startTime}`).toISOString(),
+      end: new Date(`${newAppointmentDate}T${endTime}`).toISOString(),
+      calendarId: 'new',
+      provider: 'google' as const,
+      dayIndex: 0,
+      dayOfWeekIdx,
+    };
+    const sameDayWithNew = [...sameDay, newEventObj].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    mapEventsWithNew = [...before, ...sameDayWithNew, ...after];
+  }
+
+  // Always rebuild mapEventsByDay from mapEventsWithNew (not just mapEvents)
+  function getEventsByDay(events: LocatedEvent[]): Record<string, LocatedEvent[]> {
+    const byDay: Record<string, LocatedEvent[]> = {};
+    events.forEach(e => {
+      if (!e.location || !e.lat || !e.long) return;
+      const dayKey = new Date(e.start).toISOString().split('T')[0];
+      if (!byDay[dayKey]) byDay[dayKey] = [];
+      byDay[dayKey].push(e);
+    });
+    return byDay;
+  }
+  const mapEventsByDay = getEventsByDay(mapEventsWithNew);
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -241,7 +274,7 @@ export default function CalendarPage() {
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
           <MapView
-            events={mapEvents}
+            events={mapEventsWithNew}
             eventsByDay={mapEventsByDay}
             loading={eventsLoading}
             hoveredEventId={hoveredEventId}
