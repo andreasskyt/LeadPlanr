@@ -29,6 +29,12 @@ export default function CalendarPage() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
+  // Add state for new appointment date
+  const [newAppointmentDate, setNewAppointmentDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -153,7 +159,7 @@ export default function CalendarPage() {
         title,
         startTime,
         endTime,
-        date: selectedDate
+        date: newAppointmentDate
       }
     : null;
 
@@ -197,7 +203,8 @@ export default function CalendarPage() {
         {/* Left side - New Appointment Card */}
         <div className="w-[320px] bg-white rounded-lg shadow p-2">
           <NewAppointmentView
-            selectedDate={selectedDate}
+            selectedDate={newAppointmentDate}
+            setSelectedDate={setNewAppointmentDate}
             initialTitle={initialTitle}
             initialLocation={initialLocation}
             location={location}

@@ -20,7 +20,7 @@ interface MapViewProps {
     title: string;
     startTime: string;
     endTime: string;
-    date: Date;
+    date: string;
   } | null;
 }
 
@@ -180,8 +180,9 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
                   <div className="font-semibold text-base mb-1 truncate">{newAppointmentMarker.title || 'New Appointment'}</div>
                   {newAppointmentMarker.location && <div className="text-xs text-gray-600 mb-1 truncate">{newAppointmentMarker.location}</div>}
                   <div className="text-xs">
+                    {newAppointmentMarker.date}
                     {newAppointmentMarker.startTime && newAppointmentMarker.endTime
-                      ? `${newAppointmentMarker.startTime} - ${newAppointmentMarker.endTime}`
+                      ? `, ${newAppointmentMarker.startTime} - ${newAppointmentMarker.endTime}`
                       : ''}
                   </div>
                 </div>
