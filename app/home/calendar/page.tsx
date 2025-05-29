@@ -163,6 +163,26 @@ export default function CalendarPage() {
       }
     : null;
 
+  // Prepare the events array for DayWeekView, including the new appointment if valid
+  const isNewEventValid = !!(title && location && newAppointmentDate && startTime && endTime);
+  let eventsForCalendar = events;
+  if (isNewEventValid) {
+    // Compose ISO start/end from date and time
+    const startISO = new Date(`${newAppointmentDate}T${startTime}`).toISOString();
+    const endISO = new Date(`${newAppointmentDate}T${endTime}`).toISOString();
+    const newEvent = {
+      id: 'new-appointment',
+      title,
+      location,
+      start: startISO,
+      end: endISO,
+      calendarId: 'new',
+      provider: 'google' as const, // fallback to match CalendarEvent type
+      color: '#e11d48', // rose-600
+    };
+    eventsForCalendar = [...events, newEvent];
+  }
+
   return (
     <div className="flex flex-col h-full p-4 gap-4">
       {/* Top section with month view and day/week view */}
@@ -188,7 +208,7 @@ export default function CalendarPage() {
           <DayWeekView
             selectedDate={selectedDate}
             viewMode={viewMode}
-            events={events}
+            events={eventsForCalendar}
             loading={eventsLoading}
             error={eventsError}
             showOverlay={accounts.length === 0}

@@ -118,7 +118,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
   };
 
   // Render a single event block for a day
-  const renderEventBlock = (event: CalendarEvent, day: Date, colorOverride?: string) => {
+  const renderEventBlock = (event: CalendarEvent & { color?: string }, day: Date, colorOverride?: string) => {
     const dayStart = getDayStart(day);
     const dayEnd = getDayEnd(day);
     const eventStart = new Date(event.start);
@@ -145,7 +145,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
           top: `${topPx}px`,
           height: `${heightPx}px`,
           minHeight: `${minHeightPx}px`,
-          backgroundColor: colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'),
+          backgroundColor: event.color || colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'),
           color: 'white',
           zIndex: hoveredEventId === event.id ? 20 : 10,
         }}
