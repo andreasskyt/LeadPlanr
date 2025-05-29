@@ -268,6 +268,7 @@ export default function CalendarPage() {
             setStartTime={setStartTime}
             endTime={endTime}
             setEndTime={setEndTime}
+            isLocationResolved={location ? !!locationMap[location] : undefined}
           />
         </div>
 

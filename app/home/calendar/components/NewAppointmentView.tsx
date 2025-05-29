@@ -2,6 +2,8 @@ import React from 'react';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
 
 // Generate time options in 5-minute intervals
 const generateTimeOptions = () => {
@@ -30,6 +32,7 @@ interface NewAppointmentViewProps {
   setStartTime: (value: string) => void;
   endTime: string;
   setEndTime: (value: string) => void;
+  isLocationResolved?: boolean;
 }
 
 const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
@@ -45,6 +48,7 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
   setStartTime,
   endTime,
   setEndTime,
+  isLocationResolved,
 }) => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -62,7 +66,16 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <div className="flex items-center gap-2 mb-1">
+              <label className="block text-sm font-medium text-gray-700">Location</label>
+              {location && (
+                isLocationResolved ? (
+                  <CheckCircleIcon className="text-green-500" style={{ fontSize: '1rem' }} />
+                ) : (
+                  <ErrorIcon className="text-red-500" style={{ fontSize: '1rem' }} />
+                )
+              )}
+            </div>
             <input
               type="text"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
