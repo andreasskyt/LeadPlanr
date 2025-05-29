@@ -1,33 +1,33 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/jwt'
+import { verifyTokenEdge } from '@/lib/jwt'
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard']
+const protectedRoutes = ['/home']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('token')
-  const isHomePage = pathname.startsWith('/home')
 
+  console.log('[MIDDLEWARE] Path:', pathname)
+  console.log('[MIDDLEWARE] Token:', token?.value)
+  
   // Check if the route requires authentication
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     if (!token) {
+      console.log('[MIDDLEWARE] No token found, redirecting to /login')
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     try {
-      // Verify token
-      verifyToken(token.value)
+      // Verify token using Edge-compatible function
+      await verifyTokenEdge(token.value)
+      console.log('[MIDDLEWARE] Token verified successfully')
     } catch (error) {
       // Token is invalid or expired
+      console.error('[MIDDLEWARE] Token verification failed:', error)
       return NextResponse.redirect(new URL('/login', request.url))
     }
-  }
-
-  // If trying to access /home without being logged in, redirect to login
-  if (isHomePage && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()

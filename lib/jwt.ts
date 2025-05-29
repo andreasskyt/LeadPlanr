@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key' // I produktion skal dette være en sikker hemmelighed
 
@@ -14,6 +15,21 @@ export function generateToken(payload: JWTPayload): string {
 export function verifyToken(token: string): JWTPayload {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload
+  } catch (error) {
+    throw new Error('Invalid token')
+  }
+}
+
+// Edge-compatible verification for middleware
+export async function verifyTokenEdge(token: string): Promise<JWTPayload> {
+  const secret = new TextEncoder().encode(JWT_SECRET)
+  try {
+    const { payload } = await jwtVerify(token, secret)
+    // payload is JWTPayload, but may contain extra fields
+    return {
+      userId: payload.userId as number,
+      email: payload.email as string,
+    }
   } catch (error) {
     throw new Error('Invalid token')
   }

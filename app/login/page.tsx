@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,9 +17,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    fetch('/api/auth/csrf', { method: 'GET' })
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError(null)
+    setError('')
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
@@ -28,7 +32,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push('/home')
+      router.push('/home/calendar')
     } catch (error) {
       console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Failed to login')

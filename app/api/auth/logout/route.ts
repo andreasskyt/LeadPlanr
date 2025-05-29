@@ -11,5 +11,13 @@ export async function POST() {
     maxAge: 0 // Expire immediately
   })
 
+  // Clear the CSRF token cookie
+  response.cookies.set('csrf-token', '', {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0 // Expire immediately
+  })
+
   return response
 } 

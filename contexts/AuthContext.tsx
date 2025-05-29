@@ -23,11 +23,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [csrfToken, setCsrfToken] = useState<string | null>(null)
 
   // Helper function to get CSRF token from cookies
   const getCSRFToken = () => {
-    return csrfToken || document.cookie
+    return document.cookie
       .split('; ')
       .find(row => row.startsWith('csrf-token='))
       ?.split('=')[1]
@@ -62,48 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return response
   }
 
-  // Initialize CSRF token
-  useEffect(() => {
-    const initCSRF = async () => {
-      try {
-        console.log('Initializing CSRF token...')
-        const response = await fetch('/api/auth/csrf', {
-          credentials: 'include',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error('Failed to initialize CSRF token')
-        }
-
-        // Get token from header
-        const token = response.headers.get('x-csrf-token')
-        if (token) {
-          console.log('Got CSRF token from header:', token)
-          setCsrfToken(token)
-        }
-
-        // Also check cookie
-        const cookieToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrf-token='))
-          ?.split('=')[1]
-
-        console.log('CSRF token status:', { 
-          hasHeaderToken: !!token,
-          hasCookieToken: !!cookieToken,
-          allCookies: document.cookie
-        })
-      } catch (error) {
-        console.error('Failed to initialize CSRF token:', error)
-      }
-    }
-
-    initCSRF()
-  }, [])
-
   useEffect(() => {
     // Check if user is logged in
     const checkAuth = async () => {
@@ -127,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     checkAuth()
-  }, [csrfToken])
+  }, [])
 
   const login = async (email: string, password: string) => {
     try {

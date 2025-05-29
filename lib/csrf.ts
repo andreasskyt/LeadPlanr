@@ -21,26 +21,12 @@ export function setCSRFToken(response: NextResponse, token: string): NextRespons
   // Also set token in header for easier debugging
   response.headers.set('x-csrf-token', token)
 
-  console.log('Setting CSRF token:', {
-    token,
-    cookie: response.cookies.get('csrf-token'),
-    header: response.headers.get('x-csrf-token')
-  })
-
   return response
 }
 
 export function verifyCSRFToken(request: NextRequest): boolean {
   const cookieToken = request.cookies.get('csrf-token')?.value
   const headerToken = request.headers.get('x-csrf-token')
-
-  console.log('Verifying CSRF token:', {
-    hasCookieToken: !!cookieToken,
-    hasHeaderToken: !!headerToken,
-    cookieToken,
-    headerToken,
-    allCookies: Array.from(request.cookies.getAll()).map(c => ({ name: c.name, value: c.value }))
-  })
 
   if (!cookieToken || !headerToken) {
     console.error('Missing CSRF token:', { cookieToken, headerToken })

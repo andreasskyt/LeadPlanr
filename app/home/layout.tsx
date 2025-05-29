@@ -17,7 +17,9 @@ export default function HomeLayout({
   const getPageTitle = () => {
     if (pathname === '/home/settings') return 'Settings'
     if (pathname === '/home/calendar') return 'Calendar'
-    return 'Dashboard'
+    if (pathname === '/home/clients') return 'Clients'
+    if (pathname === '/home/reports') return 'Reports'
+    return 'Calendar'
   }
 
   return (
