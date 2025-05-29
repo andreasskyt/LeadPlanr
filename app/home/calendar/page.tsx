@@ -7,6 +7,8 @@ import MapView from './components/MapView';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { CalendarAccount } from '@/lib/db';
 import { CalendarEvent } from '@/lib/calendar-service';
+import NewAppointmentView from './components/NewAppointmentView';
+import { useSearchParams } from 'next/navigation';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -15,6 +17,10 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [locationMap, setLocationMap] = useState<Record<string, { lat: number; long: number }>>({});
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const initialTitle = searchParams.get('title') || '';
+  const initialLocation = searchParams.get('location') || '';
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -166,52 +172,7 @@ export default function CalendarPage() {
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Left side - New Appointment Card */}
         <div className="w-[320px] bg-white rounded-lg shadow p-2">
-          <div className="p-2">
-            <h3 className="text-lg font-semibold mb-4">Create New Appointment</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter appointment title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  readOnly
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                  <input
-                    type="time"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                  <input
-                    type="time"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <NewAppointmentView selectedDate={selectedDate} initialTitle={initialTitle} initialLocation={initialLocation} />
         </div>
 
         {/* Right side - Map View */}
