@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface NewAppointmentViewProps {
   selectedDate: Date;
   initialTitle?: string;
   initialLocation?: string;
+  location: string;
+  setLocation: (value: string) => void;
+  title: string;
+  setTitle: (value: string) => void;
+  startTime: string;
+  setStartTime: (value: string) => void;
+  endTime: string;
+  setEndTime: (value: string) => void;
 }
 
-const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({ selectedDate, initialTitle = '', initialLocation = '' }) => {
-  const [title, setTitle] = useState(initialTitle);
-  const [location, setLocation] = useState(initialLocation);
-
+const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
+  selectedDate,
+  initialTitle = '',
+  initialLocation = '',
+  location,
+  setLocation,
+  title,
+  setTitle,
+  startTime,
+  setStartTime,
+  endTime,
+  setEndTime,
+}) => {
   return (
     <div className="p-2">
       <h3 className="text-lg font-semibold mb-4">Create New Appointment</h3>
@@ -30,7 +47,7 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({ selectedDate, i
             type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter address"
-            value={location}
+            value={location ?? initialLocation}
             onChange={e => setLocation(e.target.value)}
           />
         </div>
@@ -49,6 +66,8 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({ selectedDate, i
             <input
               type="time"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
             />
           </div>
           <div>
@@ -56,6 +75,8 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({ selectedDate, i
             <input
               type="time"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={endTime}
+              onChange={e => setEndTime(e.target.value)}
             />
           </div>
         </div>

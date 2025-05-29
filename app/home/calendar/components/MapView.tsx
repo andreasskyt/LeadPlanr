@@ -13,6 +13,15 @@ interface MapViewProps {
   loading?: boolean;
   hoveredEventId?: string | null;
   setHoveredEventId?: (id: string | null) => void;
+  newAppointmentMarker?: {
+    lat: number;
+    long: number;
+    location: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    date: Date;
+  } | null;
 }
 
 // Helper for drawing polylines using the imperative API
@@ -49,12 +58,11 @@ function Polylines({ eventsByDay }: { eventsByDay: MapViewProps['eventsByDay'] }
 }
 
 // Helper component to handle map bounds
-function MapBounds({ events }: { events: MapViewProps['events'] }) {
+function MapBounds({ events, newAppointmentMarker }: { events: MapViewProps['events'], newAppointmentMarker?: { lat: number; long: number; location: string } | null }) {
   const map = useMap();
-  const hasAdjustedBounds = useRef(false);
 
   useEffect(() => {
-    if (!map || events.length === 0 || hasAdjustedBounds.current) return;
+    if (!map || (events.length === 0 && !newAppointmentMarker)) return;
 
     const bounds = new google.maps.LatLngBounds();
     events.forEach(event => {
@@ -62,19 +70,21 @@ function MapBounds({ events }: { events: MapViewProps['events'] }) {
         bounds.extend({ lat: event.lat, lng: event.long });
       }
     });
-
+    if (newAppointmentMarker) {
+      bounds.extend({ lat: newAppointmentMarker.lat, lng: newAppointmentMarker.long });
+    }
     // Add some padding to the bounds
     const padding = { top: 50, right: 50, bottom: 50, left: 50 };
     map.fitBounds(bounds, padding);
-    hasAdjustedBounds.current = true;
-  }, [map, events]);
+  }, [map, events, newAppointmentMarker]);
 
   return null;
 }
 
-export default function MapView({ events, eventsByDay, loading, hoveredEventId, setHoveredEventId }: MapViewProps) {
+export default function MapView({ events, eventsByDay, loading, hoveredEventId, setHoveredEventId, newAppointmentMarker }: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [locationLoaded, setLocationLoaded] = useState(false);
+  const [hoveredNewMarker, setHoveredNewMarker] = useState(false);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -108,7 +118,7 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
         {/* Draw lines for each day using imperative API */}
         <Polylines eventsByDay={eventsByDay} />
         {/* Handle map bounds */}
-        <MapBounds events={events} />
+        <MapBounds events={events} newAppointmentMarker={newAppointmentMarker} />
         {/* Markers with indexes */}
         {events.filter(e => e.lat && e.long).map(event => (
           <AdvancedMarker
@@ -142,6 +152,43 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
             )}
           </AdvancedMarker>
         ))}
+        {/* Special marker for new appointment location */}
+        {newAppointmentMarker && (
+          <AdvancedMarker
+            key="new-appointment-marker"
+            position={{ lat: newAppointmentMarker.lat, lng: newAppointmentMarker.long }}
+            onMouseEnter={() => setHoveredNewMarker(true)}
+            onMouseLeave={() => setHoveredNewMarker(false)}
+          >
+            <Pin
+              background="#e11d48" // rose-600
+              borderColor="#be123c" // rose-800
+              glyphColor="white"
+              scale={hoveredNewMarker ? 1.5 : 1}
+            >
+              <span style={{ fontWeight: 'bold', fontSize: hoveredNewMarker ? 20 : 16 }}>+</span>
+            </Pin>
+            {hoveredNewMarker && (
+              <InfoWindow
+                position={{ lat: newAppointmentMarker.lat, lng: newAppointmentMarker.long }}
+                pixelOffset={[0, -40]}
+                onClose={() => setHoveredNewMarker(false)}
+                shouldFocus={false}
+                disableAutoPan={true}
+              >
+                <div className="min-w-[180px] max-w-[200px] max-h-[150px] overflow-hidden">
+                  <div className="font-semibold text-base mb-1 truncate">{newAppointmentMarker.title || 'New Appointment'}</div>
+                  {newAppointmentMarker.location && <div className="text-xs text-gray-600 mb-1 truncate">{newAppointmentMarker.location}</div>}
+                  <div className="text-xs">
+                    {newAppointmentMarker.startTime && newAppointmentMarker.endTime
+                      ? `${newAppointmentMarker.startTime} - ${newAppointmentMarker.endTime}`
+                      : ''}
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
+          </AdvancedMarker>
+        )}
       </Map>
     </APIProvider>
   );

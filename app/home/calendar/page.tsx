@@ -22,6 +22,13 @@ export default function CalendarPage() {
   const initialTitle = searchParams.get('title') || '';
   const initialLocation = searchParams.get('location') || '';
 
+  const [location, setLocation] = useState(initialLocation);
+
+  // Add state for new appointment title, start time, and end time
+  const [title, setTitle] = useState(initialTitle);
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -47,7 +54,11 @@ export default function CalendarPage() {
 
   // Fetch lat/long for all unique event locations
   useEffect(() => {
-    const uniqueLocations = Array.from(new Set(events.map(e => e.location).filter(Boolean)));
+    const uniqueLocations = Array.from(new Set([
+      ...events.map(e => e.location).filter(Boolean),
+      location,
+      initialLocation
+    ].filter(Boolean)));
     if (uniqueLocations.length === 0) {
       setLocationMap({});
       return;
@@ -66,7 +77,7 @@ export default function CalendarPage() {
         if (!cancelled) setLocationMap({});
       });
     return () => { cancelled = true; };
-  }, [events]);
+  }, [events, location, initialLocation]);
 
   // Merge lat/long into events
   type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
@@ -133,6 +144,19 @@ export default function CalendarPage() {
   }
   const mapEventsByDay = getEventsByDay(mapEvents);
 
+  // Compute new appointment marker info if location is resolved
+  const newAppointmentMarkerInfo = (location && locationMap[location])
+    ? {
+        lat: locationMap[location].lat,
+        long: locationMap[location].long,
+        location,
+        title,
+        startTime,
+        endTime,
+        date: selectedDate
+      }
+    : null;
+
   return (
     <div className="flex flex-col h-full p-4 gap-4">
       {/* Top section with month view and day/week view */}
@@ -172,12 +196,31 @@ export default function CalendarPage() {
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Left side - New Appointment Card */}
         <div className="w-[320px] bg-white rounded-lg shadow p-2">
-          <NewAppointmentView selectedDate={selectedDate} initialTitle={initialTitle} initialLocation={initialLocation} />
+          <NewAppointmentView
+            selectedDate={selectedDate}
+            initialTitle={initialTitle}
+            initialLocation={initialLocation}
+            location={location}
+            setLocation={setLocation}
+            title={title}
+            setTitle={setTitle}
+            startTime={startTime}
+            setStartTime={setStartTime}
+            endTime={endTime}
+            setEndTime={setEndTime}
+          />
         </div>
 
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <MapView events={mapEvents} eventsByDay={mapEventsByDay} loading={eventsLoading} hoveredEventId={hoveredEventId} setHoveredEventId={setHoveredEventId} />
+          <MapView
+            events={mapEvents}
+            eventsByDay={mapEventsByDay}
+            loading={eventsLoading}
+            hoveredEventId={hoveredEventId}
+            setHoveredEventId={setHoveredEventId}
+            newAppointmentMarker={newAppointmentMarkerInfo}
+          />
         </div>
       </div>
     </div>
