@@ -27,7 +27,9 @@ export default function HomeLayout({
         <div className="bg-white shadow">
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl font-semibold text-gray-800">Field Appointment Planner</h1>
+              <Link href="/" className="text-xl font-semibold text-gray-800 hover:text-gray-900">
+                Field Appointment Planner
+              </Link>
               <h2 className="text-lg text-gray-600">{getPageTitle()}</h2>
             </div>
             <div className="flex items-center gap-4">
