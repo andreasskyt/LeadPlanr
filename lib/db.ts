@@ -5,7 +5,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set')
 }
 
-console.log('Attempting to connect to database...')
+// console.log('Attempting to connect to database...')
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -30,14 +30,14 @@ pool.connect(async (err, client, release) => {
   try {
     // Test query to verify permissions
     const result = await client.query('SELECT current_user, current_database()')
-    console.log('Database connection test:', {
-      user: result.rows[0].current_user,
-      database: result.rows[0].current_database
-    })
+    // console.log('Database connection test:', {
+    //   user: result.rows[0].current_user,
+    //   database: result.rows[0].current_database
+    // })
     
     // Test calendar_accounts table access
     await client.query('SELECT 1 FROM calendar_accounts LIMIT 1')
-    console.log('Successfully verified calendar_accounts table access')
+    //console.log('Successfully verified calendar_accounts table access')
   } catch (error) {
     console.error('Error testing database permissions:', error)
   } finally {
@@ -53,15 +53,15 @@ pool.on('error', (err) => {
 
 // Helper function to run queries
 export async function query<T = any>(text: string, params?: any[]) {
-  console.log('Executing query:', { text, params })
+  //console.log('Executing query:', { text, params })
   const start = Date.now()
   try {
     const result = await pool.query(text, params)
-    const duration = Date.now() - start
-    console.log('Query executed successfully:', {
-      duration,
-      rows: result.rows.length
-    })
+    // const duration = Date.now() - start
+    // console.log('Query executed successfully:', {
+    //   duration,
+    //   rows: result.rows.length
+    // })
     return result
   } catch (error) {
     console.error('Error executing query:', {

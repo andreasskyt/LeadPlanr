@@ -9,8 +9,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('token')
 
-  console.log('[MIDDLEWARE] Path:', pathname)
-  console.log('[MIDDLEWARE] Token:', token?.value)
+  // console.log('[MIDDLEWARE] Path:', pathname)
+  // console.log('[MIDDLEWARE] Token:', token?.value)
   
   // Check if the route requires authentication
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
     try {
       // Verify token using Edge-compatible function
       await verifyTokenEdge(token.value)
-      console.log('[MIDDLEWARE] Token verified successfully')
+      // console.log('[MIDDLEWARE] Token verified successfully')
     } catch (error) {
       // Token is invalid or expired
       console.error('[MIDDLEWARE] Token verification failed:', error)
