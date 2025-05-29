@@ -23,6 +23,16 @@ export default function CalendarPage() {
   const initialLocation = searchParams.get('location') || '';
 
   const [location, setLocation] = useState(initialLocation);
+  const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
+
+  // Debounce location changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedLocation(location);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [location]);
 
   // Add state for new appointment title, start time, and end time
   const [title, setTitle] = useState(initialTitle);
@@ -62,7 +72,7 @@ export default function CalendarPage() {
   useEffect(() => {
     const uniqueLocations = Array.from(new Set([
       ...events.map(e => e.location).filter(Boolean),
-      location,
+      debouncedLocation,
       initialLocation
     ].filter(Boolean)));
     if (uniqueLocations.length === 0) {
@@ -83,7 +93,7 @@ export default function CalendarPage() {
         if (!cancelled) setLocationMap({});
       });
     return () => { cancelled = true; };
-  }, [events, location, initialLocation]);
+  }, [events, debouncedLocation, initialLocation]);
 
   // Merge lat/long into events
   type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
