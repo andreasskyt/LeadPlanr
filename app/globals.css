@@ -4,4 +4,10 @@
 
 html, body, #__next {
   height: 100%;
+}
+
+.profile-menu-opaque {
+  background-color: #fff !important;
+  opacity: 1 !important;
+  z-index: 9999 !important;
 } 
