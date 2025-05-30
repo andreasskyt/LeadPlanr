@@ -1,0 +1,82 @@
+import { NextResponse } from 'next/server';
+import { calendarAccounts } from '@/lib/db';
+import { verifyToken } from '@/lib/jwt';
+import { cookies } from 'next/headers';
+
+export async function POST(request: Request) {
+  try {
+    const token = cookies().get('token')?.value;
+    if (!token) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded?.userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const data = await request.json();
+    const { title, start, end, location, description, calendarId } = data;
+
+    // Get the calendar account
+    const account = await calendarAccounts.getByUserId(decoded.userId.toString());
+    if (!account || account.length === 0) {
+      return new NextResponse('No calendar account found', { status: 404 });
+    }
+
+    // Use the first account for now (we can add calendar selection later)
+    const calendarAccount = account[0];
+
+    let response;
+    if (calendarAccount.provider.toLowerCase() === 'google') {
+      response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${calendarAccount.access_token}`,
+          },
+          body: JSON.stringify({
+            summary: title,
+            start: { dateTime: start },
+            end: { dateTime: end },
+            location,
+            description,
+          }),
+        }
+      );
+    } else if (calendarAccount.provider.toLowerCase() === 'microsoft') {
+      response = await fetch(
+        `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${calendarAccount.access_token}`,
+          },
+          body: JSON.stringify({
+            subject: title,
+            start: { dateTime: start, timeZone: 'UTC' },
+            end: { dateTime: end, timeZone: 'UTC' },
+            location: { displayName: location },
+            body: { content: description, contentType: 'text' },
+          }),
+        }
+      );
+    } else {
+      return new NextResponse('Unsupported provider', { status: 400 });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Calendar API error: ${response.status} ${errorText}`);
+    }
+
+    const event = await response.json();
+    return NextResponse.json(event);
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+} 

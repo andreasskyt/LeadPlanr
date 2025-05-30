@@ -18,6 +18,12 @@ export default function CalendarPage() {
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
   const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar);
 
+  // Add a key to force refresh of useCalendarEvents
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refreshEvents = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   // Handle calendar selection from URL parameter
   useEffect(() => {
     const calendarId = searchParams.get('calendar');
@@ -189,6 +195,8 @@ export default function CalendarPage() {
       dayIndex: 0,
       dayOfWeekIdx,
       color: '#6b7280', // medium grey background (gray-500)
+      lat: locationMap[location].lat,
+      long: locationMap[location].long,
     };
     const sameDayWithNew = [...sameDay, newEventObj].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
     mapEventsWithNew = [...before, ...sameDayWithNew, ...after];
@@ -198,19 +206,14 @@ export default function CalendarPage() {
   function getEventsByDay(events: LocatedEvent[]): Record<string, LocatedEvent[]> {
     const byDay: Record<string, LocatedEvent[]> = {};
     events.forEach(e => {
-      if (
-        !e.location ||
-        typeof e.lat !== 'number' ||
-        typeof e.long !== 'number' ||
-        typeof e.dayIndex !== 'number' ||
-        typeof e.dayOfWeekIdx !== 'number'
-      ) return;
+      if (!e.location) return;
       const dayKey = new Date(e.start).toISOString().split('T')[0];
       if (!byDay[dayKey]) byDay[dayKey] = [];
       byDay[dayKey].push(e);
     });
     return byDay;
   }
+
   // For MapView, filter to only events with all required fields and cast to the required type
   const mapEventsByDay = Object.fromEntries(
     Object.entries(getEventsByDay(mapEventsWithNew)).map(([day, events]) => [
@@ -218,12 +221,23 @@ export default function CalendarPage() {
       events
         .filter(
           (e): e is LocatedEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number } =>
-            typeof e.lat === 'number' &&
-            typeof e.long === 'number' &&
-            typeof e.dayIndex === 'number' &&
-            typeof e.dayOfWeekIdx === 'number'
+            (typeof e.lat === 'number' || e.id === 'new-appointment') &&
+            (typeof e.long === 'number' || e.id === 'new-appointment') &&
+            (typeof e.dayIndex === 'number' || e.id === 'new-appointment') &&
+            (typeof e.dayOfWeekIdx === 'number' || e.id === 'new-appointment')
         )
-        .map(e => e as CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number }),
+        .map(e => {
+          if (e.id === 'new-appointment') {
+            return {
+              ...e,
+              lat: locationMap[location].lat,
+              long: locationMap[location].long,
+              dayIndex: 0,
+              dayOfWeekIdx: (new Date(e.start).getDay() + 6) % 7,
+            } as CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
+          }
+          return e as CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
+        }),
     ])
   ) as unknown as Record<string, (CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number })[]>;
 
@@ -269,22 +283,22 @@ export default function CalendarPage() {
                 });
                 if (newState.startTime) {
                   const start = new Date(newState.startTime);
-                  setStartTime(start.toTimeString().slice(0, 5));
+                  setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
                   setNewAppointmentDate(start.toISOString().split('T')[0]);
                 }
                 if (newState.endTime) {
                   const end = new Date(newState.endTime);
-                  setEndTime(end.toTimeString().slice(0, 5));
+                  setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
                 }
               } else {
                 if (prev.startTime) {
                   const start = new Date(prev.startTime);
-                  setStartTime(start.toTimeString().slice(0, 5));
+                  setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
                   setNewAppointmentDate(start.toISOString().split('T')[0]);
                 }
                 if (prev.endTime) {
                   const end = new Date(prev.endTime);
-                  setEndTime(end.toTimeString().slice(0, 5));
+                  setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
                 }
               }
             }}
@@ -292,11 +306,13 @@ export default function CalendarPage() {
         </div>
       </div>
       <div className="flex gap-4 flex-1 min-h-0">
-        {/* Left side - New Appointment Card */}
-        <div className="w-[320px] bg-white rounded-lg shadow p-2">
+        {/* Left side - New Appointment Form */}
+        <div className="w-[320px] bg-white rounded-lg shadow">
           <NewAppointmentView
             selectedDate={newAppointmentDate}
             setSelectedDate={setNewAppointmentDate}
+            initialTitle={title}
+            initialLocation={location}
             location={location}
             setLocation={setLocation}
             title={title}
@@ -305,15 +321,15 @@ export default function CalendarPage() {
             setStartTime={setStartTime}
             endTime={endTime}
             setEndTime={setEndTime}
-            isLocationResolved={location ? !!locationMap[location] : undefined}
+            isLocationResolved={!!locationMap[location]}
+            onEventCreated={refreshEvents}
           />
         </div>
         {/* Right side - Map View */}
-        <div className="flex-1 bg-white rounded-lg shadow p-4">
+        <div className="flex-1 bg-white rounded-lg shadow">
           <MapView
-            events={mapEventsWithNew}
+            events={Object.values(mapEventsByDay).flat()}
             eventsByDay={mapEventsByDay}
-            loading={eventsLoading}
             hoveredEventId={hoveredEventId}
             setHoveredEventId={setHoveredEventId}
             newAppointmentMarker={newAppointmentMarkerInfo}

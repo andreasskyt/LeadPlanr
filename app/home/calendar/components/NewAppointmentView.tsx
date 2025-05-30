@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import { useCalendar } from '@/contexts/CalendarContext';
 
 // Generate time options in 5-minute intervals
 const generateTimeOptions = () => {
@@ -33,6 +34,7 @@ interface NewAppointmentViewProps {
   endTime: string;
   setEndTime: (value: string) => void;
   isLocationResolved?: boolean;
+  onEventCreated?: () => void;
 }
 
 const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
@@ -49,11 +51,82 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
   endTime,
   setEndTime,
   isLocationResolved,
+  onEventCreated,
 }) => {
+  const { selectedCalendarId } = useCalendar();
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleCreate = async () => {
+    if (!title || !location || !startTime || !endTime || !selectedCalendarId) {
+      return;
+    }
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const start = new Date(`${selectedDate}T${startTime}`).toISOString();
+      const end = new Date(`${selectedDate}T${endTime}`).toISOString();
+
+      const response = await fetch('/api/calendar-events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          start,
+          end,
+          location,
+          calendarId: selectedCalendarId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      // Clear the form
+      setTitle('');
+      setLocation('');
+      setStartTime('');
+      setEndTime('');
+
+      // Notify parent that event was created
+      onEventCreated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create event');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const isFormValid = !!(title && location && startTime && endTime && selectedCalendarId);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <div className="p-2">
-        <h3 className="text-lg font-semibold mb-4">Create New Appointment</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">New Appointment</h3>
+          <button
+            onClick={handleCreate}
+            disabled={!isFormValid || isCreating}
+            className={`px-4 py-2 rounded-md text-white font-medium ${
+              isFormValid && !isCreating
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {isCreating ? 'Creating...' : 'Create'}
+          </button>
+        </div>
+        {error && (
+          <div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        )}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
