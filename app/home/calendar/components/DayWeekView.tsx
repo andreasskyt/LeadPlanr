@@ -121,9 +121,15 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     const eventStart = new Date(event.start);
     const eventEnd = new Date(event.end);
 
-    // Clamp event to the current day
-    const start = eventStart < dayStart ? dayStart : eventStart;
-    const end = eventEnd > dayEnd ? dayEnd : eventEnd;
+    // Only clamp if the event actually overlaps the day
+    let start = eventStart;
+    let end = eventEnd;
+    if (eventEnd <= dayStart || eventStart >= dayEnd) {
+      // Event is completely outside this day, don't render
+      return null;
+    }
+    if (eventStart < dayStart) start = dayStart;
+    if (eventEnd > dayEnd) end = dayEnd;
 
     const startMinutes = (start.getHours() * 60) + start.getMinutes();
     const endMinutes = (end.getHours() * 60) + end.getMinutes();
@@ -184,63 +190,77 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     if (error) {
       return <div className="h-full flex items-center justify-center text-red-400">{error}</div>;
     }
+    const dayOfWeekIdx = (selectedDate.getDay() + 6) % 7;
+    const eventsForDay = events.filter(event => {
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      // Event overlaps this day
+      return eventStart < getDayEnd(selectedDate) && eventEnd > getDayStart(selectedDate);
+    });
+    const dayKey = selectedDate.toISOString().split('T')[0];
     return (
       <div className="h-full relative">
-        <div className="text-base font-semibold mb-2">
-          {formatDate(selectedDate)}
+        {/* Day header */}
+        <div className="grid gap-0 mb-1" style={{gridTemplateColumns: `48px 1fr`}}>
+          <div className="text-xs text-gray-500" />
+          <div className="text-center font-semibold text-base">{formatDate(selectedDate)}</div>
         </div>
-        <div className="h-[calc(100%-2rem)] overflow-y-auto relative">
-          {/* Hour grid */}
-          <div className="grid gap-0" style={{gridTemplateColumns: `48px 1fr`}}>
-            {hours.map((hour) => (
-              <React.Fragment key={hour}>
-                <div
-                  className="text-xs text-gray-500 pt-1 pr-1 text-right border-t border-gray-200"
-                  style={{height: `${HOUR_ROW_HEIGHT}px`, lineHeight: '16px'}}
-                >
-                  {hour.toString().padStart(2, '0')}:00
-                </div>
-                <div className="border-t border-gray-200 relative" style={{height: `${HOUR_ROW_HEIGHT}px`}}>
-                  {/* Events for this hour */}
-                  {events.filter(event => {
+        <div className="h-full overflow-y-auto relative">
+          <div style={{ height: 24 * HOUR_ROW_HEIGHT, position: 'relative' }}>
+            {/* Hour grid */}
+            <div className="grid" style={{gridTemplateColumns: `48px 1fr`}}>
+              {hours.map((hour) => (
+                <React.Fragment key={hour}>
+                  <div
+                    className="text-xs text-gray-500 pt-1 pr-1 text-right border-t border-gray-200"
+                    style={{height: `${HOUR_ROW_HEIGHT}px`, lineHeight: '16px'}}
+                  >
+                    {hour.toString().padStart(2, '0')}:00
+                  </div>
+                  <div className="border-t border-gray-200 relative" style={{height: `${HOUR_ROW_HEIGHT}px`}} />
+                </React.Fragment>
+              ))}
+            </div>
+            {/* Slot overlays: absolutely positioned, below events */}
+            <div className="absolute left-[48px] right-0 top-0 bottom-0" style={{zIndex: 10, height: '100%'}}>
+              {hours.map(hour => (
+                [0, 15, 30, 45].map(minute => {
+                  // Check if any event starts within this slot
+                  const slotStart = new Date(selectedDate);
+                  slotStart.setHours(hour, minute, 0, 0);
+                  const hasEvent = eventsForDay.some(event => {
                     const eventStart = new Date(event.start);
-                    return (
-                      eventStart.getHours() === hour &&
-                      eventStart.getDate() === selectedDate.getDate() &&
-                      eventStart.getMonth() === selectedDate.getMonth() &&
-                      eventStart.getFullYear() === selectedDate.getFullYear()
-                    );
-                  }).map(event => renderEventBlock(event, selectedDate))}
-                  {/* 15-minute slots only if no event starts in this hour */}
-                  {events.every(event => {
-                    const eventStart = new Date(event.start);
-                    return eventStart.getHours() !== hour ||
-                      eventStart.getDate() !== selectedDate.getDate() ||
-                      eventStart.getMonth() !== selectedDate.getMonth() ||
-                      eventStart.getFullYear() !== selectedDate.getFullYear();
-                  }) && [0, 15, 30, 45].map(minute => (
+                    return eventStart.getHours() === slotStart.getHours() &&
+                      eventStart.getMinutes() === slotStart.getMinutes();
+                  });
+                  const isHovered = hoveredSlot && hoveredSlot.day === dayKey && hoveredSlot.hour === hour && hoveredSlot.minute === minute;
+                  if (hasEvent) return null;
+                  return (
                     <div
-                      key={minute}
-                      className="absolute inset-0 cursor-pointer hover:bg-gray-100 select-none"
-                      style={{ top: `${(minute / 60) * 100}%`, height: '25%', zIndex: 30, pointerEvents: 'auto', right: 0, left: 'calc(100% - 8px)' }}
+                      key={hour + '-' + minute}
+                      className={`absolute cursor-pointer select-none focus:outline-none min-h-[8px] ${isHovered ? 'bg-gray-200' : ''}`}
+                      style={{
+                        top: `${hour * HOUR_ROW_HEIGHT + minute * (HOUR_ROW_HEIGHT / 60)}px`,
+                        height: `${HOUR_ROW_HEIGHT / 4}px`,
+                        left: 0,
+                        right: 0,
+                        zIndex: 10,
+                        pointerEvents: 'auto',
+                        userSelect: 'none',
+                      }}
+                      onMouseEnter={() => setHoveredSlot({ day: dayKey, hour, minute })}
+                      onMouseLeave={() => setHoveredSlot(null)}
                       onClick={() => handleTimeSlotClick(selectedDate, hour, minute)}
                       role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleTimeSlotClick(selectedDate, hour, minute);
-                        }
-                      }}
+                      tabIndex={-1}
+                      aria-label={`Create event at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`}
                     />
-                  ))}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-          {/* Events */}
-          <div className="absolute" style={{left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0}}>
-            {events.map(event => renderEventBlock(event, selectedDate))}
+                  );
+                })
+              ))}
+              {/* Event blocks */}
+              {eventsForDay.map(event => renderEventBlock(event, selectedDate, DAY_COLORS[dayOfWeekIdx]))}
+            </div>
           </div>
         </div>
       </div>
