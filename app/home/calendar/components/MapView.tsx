@@ -144,8 +144,8 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
             onMouseLeave={() => setHoveredEventId && setHoveredEventId(null)}
           >
             <Pin
-              background={event.id === 'new-appointment' ? '#e11d48' : DAY_COLORS[event.dayOfWeekIdx ?? 0]}
-              borderColor={event.id === 'new-appointment' ? '#be123c' : (hoveredEventId === event.id ? '#1e40af' : '#222')}
+              background={event.id === 'new-appointment' ? '#6b7280' : DAY_COLORS[event.dayOfWeekIdx ?? 0]}
+              borderColor={event.id === 'new-appointment' ? '#4b5563' : (hoveredEventId === event.id ? '#1e40af' : '#222')}
               glyphColor="white"
               scale={hoveredEventId === event.id ? 1.5 : 1}
             >
@@ -177,8 +177,8 @@ export default function MapView({ events, eventsByDay, loading, hoveredEventId, 
             onMouseLeave={() => setHoveredNewMarker(false)}
           >
             <Pin
-              background="#e11d48" // rose-600
-              borderColor="#be123c" // rose-800
+              background="#6b7280" // medium grey (gray-500)
+              borderColor="#4b5563" // slightly darker grey (gray-600)
               glyphColor="white"
               scale={hoveredNewMarker ? 1.5 : 1}
             >

@@ -118,7 +118,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
   };
 
   // Render a single event block for a day
-  const renderEventBlock = (event: CalendarEvent & { color?: string }, day: Date, colorOverride?: string) => {
+  const renderEventBlock = (event: CalendarEvent & { color?: string; borderColor?: string; textColor?: string }, day: Date, colorOverride?: string) => {
     const dayStart = getDayStart(day);
     const dayEnd = getDayEnd(day);
     const eventStart = new Date(event.start);
@@ -135,6 +135,11 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     const minHeightPx = 20;
     if (heightPx < minHeightPx) heightPx = minHeightPx;
 
+    const isNewAppointment = event.id === 'new-appointment';
+    const backgroundColor = isNewAppointment ? event.color : (event.color || colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'));
+    const textColor = isNewAppointment ? event.textColor : 'white';
+    const borderStyle = isNewAppointment ? `1px solid ${event.borderColor}` : 'none';
+
     return (
       <div
         key={event.id}
@@ -145,8 +150,9 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
           top: `${topPx}px`,
           height: `${heightPx}px`,
           minHeight: `${minHeightPx}px`,
-          backgroundColor: event.color || colorOverride || (event.provider === 'google' ? '#4285F4' : '#0078D4'),
-          color: 'white',
+          backgroundColor,
+          color: textColor,
+          border: borderStyle,
           zIndex: hoveredEventId === event.id ? 20 : 10,
         }}
         title={`${event.title} (${formatTime(start)} - ${formatTime(end)})`}

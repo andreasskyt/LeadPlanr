@@ -139,7 +139,9 @@ export default function CalendarPage() {
       end: endISO,
       calendarId: 'new',
       provider: 'google' as const, // fallback to match CalendarEvent type
-      color: '#e11d48', // rose-600
+      color: '#6b7280', // medium grey background (gray-500)
+      borderColor: '#000000', // black border
+      textColor: '#ffffff', // white text
     };
     eventsForCalendar = [...events, newEvent];
   }
@@ -153,7 +155,8 @@ export default function CalendarPage() {
         title,
         startTime,
         endTime,
-        date: newAppointmentDate
+        date: newAppointmentDate,
+        color: '#6b7280', // medium grey background (gray-500)
       }
     : null;
 
@@ -185,6 +188,7 @@ export default function CalendarPage() {
       provider: 'google' as const,
       dayIndex: 0,
       dayOfWeekIdx,
+      color: '#6b7280', // medium grey background (gray-500)
     };
     const sameDayWithNew = [...sameDay, newEventObj].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
     mapEventsWithNew = [...before, ...sameDayWithNew, ...after];
