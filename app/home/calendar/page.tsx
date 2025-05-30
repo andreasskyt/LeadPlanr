@@ -1,79 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import MonthView from './components/MonthView';
-import DayWeekView from '@/app/home/calendar/components/DayWeekView';
-import MapView from './components/MapView';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
-import { CalendarAccount } from '@/lib/db';
-import { CalendarEvent } from '@/lib/calendar-service';
+import MonthView from './components/MonthView';
+import DayWeekView from './components/DayWeekView';
+import MapView from './components/MapView';
 import NewAppointmentView from './components/NewAppointmentView';
-import { useSearchParams } from 'next/navigation';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { CalendarEvent } from '@/lib/calendar-service';
 
 export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
-  const [accounts, setAccounts] = useState<CalendarAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [locationMap, setLocationMap] = useState<Record<string, { lat: number; long: number }>>({});
-  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const { selectedCalendarId, accounts, availableCalendars } = useCalendar();
+  const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
+  const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar);
 
-  const searchParams = useSearchParams();
-  const initialTitle = searchParams.get('title') || '';
-  const initialLocation = searchParams.get('location') || '';
-
-  const [location, setLocation] = useState(initialLocation);
-  const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
-
-  // Debounce location changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedLocation(location);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [location]);
-
-  // Add state for new appointment title, start time, and end time
-  const [title, setTitle] = useState(initialTitle);
+  // State for new appointment
+  const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-
-  // Add state for new appointment date
   const [newAppointmentDate, setNewAppointmentDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
 
+  // State for location resolution
+  const [locationMap, setLocationMap] = useState<Record<string, { lat: number; long: number }>>({});
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+
+  // Debounce location changes
+  const [debouncedLocation, setDebouncedLocation] = useState(location);
   useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const response = await fetch('/api/calendar-accounts');
-        if (!response.ok) throw new Error('Failed to fetch calendar accounts');
-        const data = await response.json();
-        setAccounts(data);
-      } catch (error) {
-        console.error('Error fetching calendar accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAccounts();
-  }, []);
-
-  const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(
-    accounts,
-    selectedDate,
-    viewMode
-  );
+    const timer = setTimeout(() => setDebouncedLocation(location), 500);
+    return () => clearTimeout(timer);
+  }, [location]);
 
   // Fetch lat/long for all unique event locations
   useEffect(() => {
     const uniqueLocations = Array.from(new Set([
       ...events.map(e => e.location).filter(Boolean),
-      debouncedLocation,
-      initialLocation
+      debouncedLocation
     ].filter(Boolean)));
     if (uniqueLocations.length === 0) {
       setLocationMap({});
@@ -93,20 +61,18 @@ export default function CalendarPage() {
         if (!cancelled) setLocationMap({});
       });
     return () => { cancelled = true; };
-  }, [events, debouncedLocation, initialLocation]);
+  }, [events, debouncedLocation]);
 
   // Merge lat/long into events
-  type LocatedEvent = CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number };
-
+  type LocatedEvent = typeof events[number] & { lat?: number; long?: number; dayIndex?: number; dayOfWeekIdx?: number };
   const eventsWithLocation: LocatedEvent[] = events.map(e =>
     e.location && locationMap[e.location]
       ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long, dayIndex: 0, dayOfWeekIdx: 0 }
       : { ...e, dayIndex: 0, dayOfWeekIdx: 0 }
-  ) as LocatedEvent[];
+  );
 
-  // Helper: group events with locations by day and assign index
+  // Group events with locations by day and assign index
   type EventsByDay = Record<string, LocatedEvent[]>;
-
   function getIndexedEventsByDay(events: LocatedEvent[]): EventsByDay {
     const byDay: EventsByDay = {};
     events.forEach((e) => {
@@ -126,10 +92,7 @@ export default function CalendarPage() {
     });
     return byDay;
   }
-
   const indexedEventsByDay = getIndexedEventsByDay(eventsWithLocation);
-
-  // Flatten for MapView
   const indexedEvents: LocatedEvent[] = Object.values(indexedEventsByDay).flat();
 
   // Helper for local day comparison
@@ -217,18 +180,38 @@ export default function CalendarPage() {
   function getEventsByDay(events: LocatedEvent[]): Record<string, LocatedEvent[]> {
     const byDay: Record<string, LocatedEvent[]> = {};
     events.forEach(e => {
-      if (!e.location || !e.lat || !e.long) return;
+      if (
+        !e.location ||
+        typeof e.lat !== 'number' ||
+        typeof e.long !== 'number' ||
+        typeof e.dayIndex !== 'number' ||
+        typeof e.dayOfWeekIdx !== 'number'
+      ) return;
       const dayKey = new Date(e.start).toISOString().split('T')[0];
       if (!byDay[dayKey]) byDay[dayKey] = [];
       byDay[dayKey].push(e);
     });
     return byDay;
   }
-  const mapEventsByDay = getEventsByDay(mapEventsWithNew);
+  // For MapView, filter to only events with all required fields and cast to the required type
+  const mapEventsByDay = Object.fromEntries(
+    Object.entries(getEventsByDay(mapEventsWithNew)).map(([day, events]) => [
+      day,
+      events
+        .filter(
+          (e): e is LocatedEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number } =>
+            typeof e.lat === 'number' &&
+            typeof e.long === 'number' &&
+            typeof e.dayIndex === 'number' &&
+            typeof e.dayOfWeekIdx === 'number'
+        )
+        .map(e => e as CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number }),
+    ])
+  ) as unknown as Record<string, (CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number })[]>;
 
+  // Layout: left column (MonthView, NewAppointmentView), right column (DayWeekView, MapView)
   return (
     <div className="flex flex-col h-full p-4 gap-4">
-      {/* Top section with month view and day/week view */}
       <div className="flex gap-4 h-[33vh] min-h-[200px]">
         {/* Left side - Month View */}
         <div className="w-[320px] bg-white rounded-lg shadow p-2">
@@ -245,13 +228,12 @@ export default function CalendarPage() {
             viewMode={viewMode}
           />
         </div>
-
         {/* Right side - Day/Week View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
           <DayWeekView
+            events={eventsForCalendar}
             selectedDate={selectedDate}
             viewMode={viewMode}
-            events={eventsForCalendar}
             loading={eventsLoading}
             error={eventsError}
             showOverlay={accounts.length === 0}
@@ -260,16 +242,12 @@ export default function CalendarPage() {
           />
         </div>
       </div>
-
-      {/* Bottom section with appointment card and map */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Left side - New Appointment Card */}
         <div className="w-[320px] bg-white rounded-lg shadow p-2">
           <NewAppointmentView
             selectedDate={newAppointmentDate}
             setSelectedDate={setNewAppointmentDate}
-            initialTitle={initialTitle}
-            initialLocation={initialLocation}
             location={location}
             setLocation={setLocation}
             title={title}
@@ -281,7 +259,6 @@ export default function CalendarPage() {
             isLocationResolved={location ? !!locationMap[location] : undefined}
           />
         </div>
-
         {/* Right side - Map View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
           <MapView

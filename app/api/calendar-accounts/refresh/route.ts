@@ -32,6 +32,7 @@ export async function POST(request: Request) {
 
     let newAccessToken: string;
     let newRefreshToken: string | null = null;
+    let validTo: Date;
 
     if (account.provider.toLowerCase() === 'google') {
       const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -48,7 +49,8 @@ export async function POST(request: Request) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to refresh Google token');
+        const errorText = await response.text();
+        throw new Error(`Failed to refresh Google token: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
@@ -56,6 +58,10 @@ export async function POST(request: Request) {
       newRefreshToken = data.refresh_token
         ? data.refresh_token
         : account.refresh_token;
+      
+      // Set valid_to based on expires_in (default to 1 hour if not provided)
+      const expiresIn = data.expires_in || 3600;
+      validTo = new Date(Date.now() + expiresIn * 1000);
     } else if (account.provider.toLowerCase() === 'microsoft') {
       const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
         method: 'POST',
@@ -72,7 +78,8 @@ export async function POST(request: Request) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to refresh Microsoft token');
+        const errorText = await response.text();
+        throw new Error(`Failed to refresh Microsoft token: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
@@ -80,6 +87,10 @@ export async function POST(request: Request) {
       newRefreshToken = data.refresh_token
         ? data.refresh_token
         : account.refresh_token;
+      
+      // Set valid_to based on expires_in (default to 1 hour if not provided)
+      const expiresIn = data.expires_in || 3600;
+      validTo = new Date(Date.now() + expiresIn * 1000);
     } else {
       return new NextResponse('Unsupported provider', { status: 400 });
     }
@@ -89,7 +100,7 @@ export async function POST(request: Request) {
       access_token: newAccessToken,
       refresh_token: newRefreshToken,
       valid_from: new Date(),
-      valid_to: null,
+      valid_to: validTo,
     });
 
     return NextResponse.json(updatedAccount);

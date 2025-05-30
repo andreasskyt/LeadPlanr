@@ -18,7 +18,8 @@ function getWeekRange(date: Date) {
 export function useCalendarEvents(
   accounts: CalendarAccount[],
   selectedDate: Date,
-  viewMode: 'day' | 'week'
+  viewMode: 'day' | 'week',
+  selectedCalendar: { id: string; provider: string } | null
 ) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,7 @@ export function useCalendarEvents(
     let isMounted = true;
 
     const fetchEvents = async () => {
-      if (accounts.length === 0) {
+      if (accounts.length === 0 || !selectedCalendar) {
         setEvents([]);
         setLoading(false);
         return;
@@ -40,8 +41,11 @@ export function useCalendarEvents(
       try {
         // Always fetch for the week containing the selected date
         const { start, end } = getWeekRange(selectedDate);
-        const fetchedEvents = await calendarService.fetchEvents(accounts, start, end);
+        const fetchedEvents = await calendarService.fetchEvents(accounts, [selectedCalendar], start, end);
         if (isMounted) {
+          // Debug log
+          // console.log('selectedCalendar:', selectedCalendar);
+          // console.log('Fetched events:', fetchedEvents.map(e => ({ id: e.id, calendarId: e.calendarId, title: e.title })));
           setEvents(fetchedEvents);
           setLoading(false);
         }
@@ -58,7 +62,7 @@ export function useCalendarEvents(
     return () => {
       isMounted = false;
     };
-  }, [accounts, selectedDate, viewMode]);
+  }, [accounts, selectedDate, viewMode, selectedCalendar]);
 
   return { events, loading, error };
 } 
