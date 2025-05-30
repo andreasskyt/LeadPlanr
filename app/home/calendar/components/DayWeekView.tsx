@@ -257,6 +257,15 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     const weekDates = getWeekDates(selectedDate);
     return (
       <div className="h-full relative">
+        {/* Day headers */}
+        <div className="grid gap-0 mb-1" style={{gridTemplateColumns: `48px repeat(7, 1fr)`}}>
+          <div className="text-xs text-gray-500" />
+          {weekDates.map((date) => (
+            <div key={date.toISOString()} className="text-center font-semibold text-xs">
+              {formatHeader(date)}
+            </div>
+          ))}
+        </div>
         <div className="h-full overflow-y-auto relative">
           <div style={{ height: 24 * HOUR_ROW_HEIGHT, position: 'relative' }}>
             {/* Hour grid */}
