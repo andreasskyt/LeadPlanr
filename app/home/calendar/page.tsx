@@ -14,9 +14,21 @@ export default function CalendarPage() {
   const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
-  const { selectedCalendarId, accounts, availableCalendars } = useCalendar();
+  const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars } = useCalendar();
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
   const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar);
+
+  // Handle calendar selection from URL parameter
+  useEffect(() => {
+    const calendarId = searchParams.get('calendar');
+    if (calendarId && availableCalendars.length > 0) {
+      // Only set if the calendar exists in available calendars
+      const calendarExists = availableCalendars.some(cal => cal.id === calendarId);
+      if (calendarExists) {
+        setSelectedCalendarId(calendarId);
+      }
+    }
+  }, [searchParams, availableCalendars, setSelectedCalendarId]);
 
   // State for new appointment
   const [title, setTitle] = useState(searchParams.get('title') || '');
