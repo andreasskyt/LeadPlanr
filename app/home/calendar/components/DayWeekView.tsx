@@ -148,7 +148,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     return (
       <div
         key={event.id}
-        className={`absolute left-0 right-2 mx-1 px-2 py-1 text-xs rounded overflow-hidden shadow transition-all duration-150 ${hoveredEventId === event.id ? 'ring-2 ring-blue-500 z-20 scale-[1.03]' : ''}`}
+        className={`absolute left-0 right-2 mx-1 px-2 py-0.5 text-xs rounded overflow-hidden shadow transition-all duration-150 ${hoveredEventId === event.id ? 'ring-2 ring-blue-500 z-20 scale-[1.03]' : ''}`}
         style={{
           top: `${topPercent}%`,
           height: `${heightPercent}%`,
@@ -162,7 +162,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
         onMouseEnter={() => setHoveredEventId && setHoveredEventId(event.id)}
         onMouseLeave={() => setHoveredEventId && setHoveredEventId(null)}
       >
-        <div className="font-medium truncate flex items-center gap-1">
+        <div className="font-medium truncate flex items-center gap-1 leading-tight">
           {event.title}
           {event.location && (
             <span className="flex items-center ml-1" title={event.location}>
@@ -170,11 +170,11 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
             </span>
           )}
         </div>
-        <div className="text-xs opacity-90 truncate">
+        <div className="text-[11px] opacity-90 truncate leading-tight">
           {formatTime(start)} - {formatTime(end)}
         </div>
         {event.location && (
-          <div className="text-xs opacity-80 truncate flex items-center gap-1 mt-0.5">
+          <div className="text-[11px] opacity-80 truncate flex items-center gap-1 mt-0.5 leading-tight">
             <LocationIcon size={11} className="inline-block align-middle" />
             <span>{event.location}</span>
           </div>
