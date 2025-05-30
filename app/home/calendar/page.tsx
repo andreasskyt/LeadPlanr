@@ -8,8 +8,10 @@ import MapView from './components/MapView';
 import NewAppointmentView from './components/NewAppointmentView';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { CalendarEvent } from '@/lib/calendar-service';
+import { useSearchParams } from 'next/navigation';
 
 export default function CalendarPage() {
+  const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
   const { selectedCalendarId, accounts, availableCalendars } = useCalendar();
@@ -17,8 +19,8 @@ export default function CalendarPage() {
   const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar);
 
   // State for new appointment
-  const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('');
+  const [title, setTitle] = useState(searchParams.get('title') || '');
+  const [location, setLocation] = useState(searchParams.get('location') || '');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(() => {
