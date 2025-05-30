@@ -19,7 +19,8 @@ export function useCalendarEvents(
   accounts: CalendarAccount[],
   selectedDate: Date,
   viewMode: 'day' | 'week',
-  selectedCalendar: { id: string; provider: string } | null
+  selectedCalendar: { id: string; provider: string } | null,
+  refreshKey?: number
 ) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ export function useCalendarEvents(
     return () => {
       isMounted = false;
     };
-  }, [accounts, selectedDate, viewMode, selectedCalendar]);
+  }, [accounts, selectedDate, viewMode, selectedCalendar, refreshKey]);
 
   return { events, loading, error };
 } 

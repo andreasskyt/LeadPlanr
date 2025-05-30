@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import MonthView from './components/MonthView';
 import DayWeekView from './components/DayWeekView';
@@ -16,13 +16,14 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
   const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars } = useCalendar();
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
-  const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar);
-
+  
   // Add a key to force refresh of useCalendarEvents
   const [refreshKey, setRefreshKey] = useState(0);
   const refreshEvents = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar, refreshKey);
 
   // Handle calendar selection from URL parameter
   useEffect(() => {
@@ -57,10 +58,16 @@ export default function CalendarPage() {
     return () => clearTimeout(timer);
   }, [location]);
 
+  // Local state for optimistically created events
+  const [createdEvents, setCreatedEvents] = useState<CalendarEvent[]>([]);
+  // To avoid duplicates, keep a set of event IDs
+  const createdEventIds = useRef<Set<string>>(new Set());
+
   // Fetch lat/long for all unique event locations
   useEffect(() => {
     const uniqueLocations = Array.from(new Set([
       ...events.map(e => e.location).filter(Boolean),
+      ...createdEvents.map(e => e.location).filter(Boolean),
       debouncedLocation
     ].filter(Boolean)));
     if (uniqueLocations.length === 0) {
@@ -81,11 +88,14 @@ export default function CalendarPage() {
         if (!cancelled) setLocationMap({});
       });
     return () => { cancelled = true; };
-  }, [events, debouncedLocation]);
+  }, [events, createdEvents, debouncedLocation]);
 
-  // Merge lat/long into events
-  type LocatedEvent = typeof events[number] & { lat?: number; long?: number; dayIndex?: number; dayOfWeekIdx?: number };
-  const eventsWithLocation: LocatedEvent[] = events.map(e =>
+  // Merge createdEvents with fetched events, avoiding duplicates by ID
+  const allEvents = [...events, ...createdEvents.filter(e => !events.some(ev => ev.id === e.id))];
+
+  // Merge lat/long into events (including created events)
+  type LocatedEvent = typeof allEvents[number] & { lat?: number; long?: number; dayIndex?: number; dayOfWeekIdx?: number };
+  const eventsWithLocation: LocatedEvent[] = allEvents.map(e =>
     e.location && locationMap[e.location]
       ? { ...e, lat: locationMap[e.location].lat, long: locationMap[e.location].long, dayIndex: 0, dayOfWeekIdx: 0 }
       : { ...e, dayIndex: 0, dayOfWeekIdx: 0 }
@@ -130,9 +140,17 @@ export default function CalendarPage() {
     mapEvents = indexedEvents.filter(e => isSameLocalDay(new Date(e.start), selectedDate));
   }
 
+  const handleEventCreated = (event: CalendarEvent) => {
+    if (!createdEventIds.current.has(event.id)) {
+      setCreatedEvents(prev => [...prev, event]);
+      createdEventIds.current.add(event.id);
+    }
+  };
+
   // Prepare the events array for DayWeekView, including the new appointment if valid
   const isNewEventValid = !!(title && location && newAppointmentDate && startTime && endTime);
-  let eventsForCalendar = events;
+  // Merge createdEvents with fetched events, avoiding duplicates by ID
+  let eventsForCalendar = allEvents;
   if (isNewEventValid) {
     // Compose ISO start/end from date and time
     const startISO = new Date(`${newAppointmentDate}T${startTime}`).toISOString();
@@ -149,7 +167,7 @@ export default function CalendarPage() {
       borderColor: '#000000', // black border
       textColor: '#ffffff', // white text
     };
-    eventsForCalendar = [...events, newEvent];
+    eventsForCalendar = [...allEvents, newEvent];
   }
 
   // Compute new appointment marker info if location is resolved
@@ -322,7 +340,7 @@ export default function CalendarPage() {
             endTime={endTime}
             setEndTime={setEndTime}
             isLocationResolved={!!locationMap[location]}
-            onEventCreated={refreshEvents}
+            onEventCreated={handleEventCreated}
           />
         </div>
         {/* Right side - Map View */}

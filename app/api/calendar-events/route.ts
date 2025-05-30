@@ -28,7 +28,9 @@ export async function POST(request: Request) {
     const calendarAccount = account[0];
 
     let response;
+    let provider;
     if (calendarAccount.provider.toLowerCase() === 'google') {
+      provider = 'google';
       response = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
         {
@@ -47,6 +49,7 @@ export async function POST(request: Request) {
         }
       );
     } else if (calendarAccount.provider.toLowerCase() === 'microsoft') {
+      provider = 'microsoft';
       response = await fetch(
         `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events`,
         {
@@ -74,7 +77,32 @@ export async function POST(request: Request) {
     }
 
     const event = await response.json();
-    return NextResponse.json(event);
+    // Transform to internal CalendarEvent format
+    let calendarEvent;
+    if (provider === 'google') {
+      calendarEvent = {
+        id: event.id,
+        title: event.summary,
+        start: event.start?.dateTime || event.start?.date,
+        end: event.end?.dateTime || event.end?.date,
+        location: event.location,
+        description: event.description,
+        calendarId,
+        provider: 'google',
+      };
+    } else if (provider === 'microsoft') {
+      calendarEvent = {
+        id: event.id,
+        title: event.subject,
+        start: event.start?.dateTime,
+        end: event.end?.dateTime,
+        location: event.location?.displayName,
+        description: event.bodyPreview,
+        calendarId,
+        provider: 'microsoft',
+      };
+    }
+    return NextResponse.json(calendarEvent);
   } catch (error) {
     console.error('Error creating calendar event:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

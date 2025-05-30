@@ -34,7 +34,7 @@ interface NewAppointmentViewProps {
   endTime: string;
   setEndTime: (value: string) => void;
   isLocationResolved?: boolean;
-  onEventCreated?: () => void;
+  onEventCreated?: (event: any) => void;
 }
 
 const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
@@ -88,14 +88,16 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
         throw new Error(errorText);
       }
 
-      // Clear the form
+      // Notify parent that event was created and wait for refresh
+      if (onEventCreated) {
+        const createdEvent = await response.json();
+        onEventCreated(createdEvent);
+      }
+      // Now clear the form
       setTitle('');
       setLocation('');
       setStartTime('');
       setEndTime('');
-
-      // Notify parent that event was created
-      onEventCreated?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create event');
     } finally {
