@@ -308,12 +308,12 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
                         return (
                           <div
                             key={hour + '-' + minute}
-                            className={`absolute cursor-pointer select-none focus:outline-none min-h-[16px] ${isHovered ? 'bg-gray-200' : ''}`}
+                            className={`absolute cursor-pointer select-none focus:outline-none min-h-[8px] ${isHovered ? 'bg-gray-200' : ''}`}
                             style={{
-                              top: `${((hour * 60 + minute) / (24 * 60)) * 100}%`,
-                              height: `${(15 / (24 * 60)) * 100}%`,
+                              top: `${hour * HOUR_ROW_HEIGHT + minute * (HOUR_ROW_HEIGHT / 60)}px`,
+                              height: `${HOUR_ROW_HEIGHT / 4}px`,
                               left: 0,
-                              right: 8,
+                              right: 0,
                               zIndex: 10,
                               pointerEvents: 'auto',
                               userSelect: 'none',
