@@ -257,6 +257,37 @@ export default function CalendarPage() {
             showOverlay={accounts.length === 0}
             hoveredEventId={hoveredEventId}
             setHoveredEventId={setHoveredEventId}
+            newAppointment={{
+              startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
+              endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
+            }}
+            setNewAppointment={(prev) => {
+              if (typeof prev === 'function') {
+                const newState = prev({
+                  startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
+                  endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
+                });
+                if (newState.startTime) {
+                  const start = new Date(newState.startTime);
+                  setStartTime(start.toTimeString().slice(0, 5));
+                  setNewAppointmentDate(start.toISOString().split('T')[0]);
+                }
+                if (newState.endTime) {
+                  const end = new Date(newState.endTime);
+                  setEndTime(end.toTimeString().slice(0, 5));
+                }
+              } else {
+                if (prev.startTime) {
+                  const start = new Date(prev.startTime);
+                  setStartTime(start.toTimeString().slice(0, 5));
+                  setNewAppointmentDate(start.toISOString().split('T')[0]);
+                }
+                if (prev.endTime) {
+                  const end = new Date(prev.endTime);
+                  setEndTime(end.toTimeString().slice(0, 5));
+                }
+              }
+            }}
           />
         </div>
       </div>
