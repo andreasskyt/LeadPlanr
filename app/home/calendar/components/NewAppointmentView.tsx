@@ -231,6 +231,10 @@ interface NewAppointmentViewProps {
   setEndTime: (value: string) => void;
   isLocationResolved?: boolean;
   onEventCreated?: (event: any) => void;
+  setViewMode: (mode: 'day' | 'week') => void;
+  currentViewMode: 'day' | 'week';
+  onCalendarDateSelect: (date: Date) => void;
+  onSuggestionSelect: (suggestion: TimeSuggestion) => void;
 }
 
 const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
@@ -248,12 +252,17 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
   setEndTime,
   isLocationResolved,
   onEventCreated,
+  setViewMode,
+  currentViewMode,
+  onCalendarDateSelect,
+  onSuggestionSelect,
 }) => {
   const { selectedCalendarId } = useCalendar();
   const [isCreating, setIsCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<'suggestions' | 'manual'>('suggestions');
   const [suggestions, setSuggestions] = React.useState<TimeSuggestion[]>([]);
+  const [selectedSuggestion, setSelectedSuggestion] = React.useState<TimeSuggestion | null>(null);
 
   const handleCreate = async () => {
     if (!title || !location || !startTime || !endTime || !selectedCalendarId) {
@@ -404,6 +413,29 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
     setSuggestions(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleSuggestionClick = (suggestion: TimeSuggestion) => {
+    setSelectedSuggestion(suggestion);
+    // Only update the calendar view to show the suggested day/week
+    const start = new Date(suggestion.start);
+    
+    // If in week view, ensure we select the Monday of the week containing the suggested date
+    if (currentViewMode === 'week') {
+      const day = start.getDay();
+      const monday = new Date(start);
+      monday.setDate(start.getDate() - ((day + 6) % 7)); // Convert to Monday (Monday=0, Sunday=6)
+      monday.setHours(0, 0, 0, 0); // Reset time to start of day
+      onCalendarDateSelect(monday);
+    } else {
+      onCalendarDateSelect(start);
+    }
+    
+    // Preserve the current view mode
+    setViewMode(currentViewMode);
+    
+    // Notify parent about the selected suggestion
+    onSuggestionSelect(suggestion);
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <div className="h-[500px] flex flex-col overflow-hidden p-2">
@@ -492,7 +524,12 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
                 suggestions.map((suggestion, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <button
-                      className="flex-1 text-left p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className={`flex-1 text-left p-2 border rounded-lg transition-colors ${
+                        selectedSuggestion === suggestion 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                      onClick={() => handleSuggestionClick(suggestion)}
                     >
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">

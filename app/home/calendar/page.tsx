@@ -14,6 +14,8 @@ export default function CalendarPage() {
   const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
+  const [lastViewMode, setLastViewMode] = useState<'day' | 'week'>('week');
+  const [selectedSuggestion, setSelectedSuggestion] = useState<{ start: string; end: string } | null>(null);
   const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars, loading: calendarLoading } = useCalendar();
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
   const isInitialRender = useRef(true);
@@ -277,6 +279,20 @@ export default function CalendarPage() {
     ])
   ) as unknown as Record<string, (CalendarEvent & { lat: number; long: number; dayIndex: number; dayOfWeekIdx: number })[]>;
 
+  // Update view mode when selected date changes
+  useEffect(() => {
+    if (!isInitialRender.current) {
+      setViewMode(lastViewMode);
+    }
+  }, [selectedDate, lastViewMode]);
+
+  // Store last view mode when it changes
+  useEffect(() => {
+    if (!isInitialRender.current) {
+      setLastViewMode(viewMode);
+    }
+  }, [viewMode]);
+
   // Layout: left column (MonthView, NewAppointmentView), right column (DayWeekView, MapView)
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -341,6 +357,7 @@ export default function CalendarPage() {
                   }
                 }
               }}
+              selectedSuggestion={selectedSuggestion}
             />
           )}
         </div>
@@ -363,6 +380,14 @@ export default function CalendarPage() {
             setEndTime={setEndTime}
             isLocationResolved={!!locationMap[location]}
             onEventCreated={handleEventCreated}
+            setViewMode={setViewMode}
+            currentViewMode={viewMode}
+            onCalendarDateSelect={(date) => {
+              setSelectedDate(date);
+            }}
+            onSuggestionSelect={(suggestion) => {
+              setSelectedSuggestion(suggestion);
+            }}
           />
         </div>
         {/* Right side - Map View */}
