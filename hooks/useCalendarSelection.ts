@@ -15,7 +15,7 @@ export function useCalendarSelection(accounts: CalendarAccount[]) {
       if (accounts.length === 0) {
         setAvailableCalendars([]);
         setSelectedCalendarId(null);
-        setLoading(false);
+        setLoading(true);
         return;
       }
 

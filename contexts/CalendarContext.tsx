@@ -11,15 +11,18 @@ interface CalendarContextType {
   selectedCalendarId: string | null
   setSelectedCalendarId: (id: string | null) => void
   loading: boolean
+  accountsLoading: boolean
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined)
 
 export function CalendarProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<CalendarAccount[]>([])
+  const [accountsLoading, setAccountsLoading] = useState(true)
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      setAccountsLoading(true)
       try {
         const response = await fetch('/api/calendar-accounts')
         if (!response.ok) throw new Error('Failed to fetch calendar accounts')
@@ -27,6 +30,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         setAccounts(data)
       } catch (error) {
         console.error('Error fetching calendar accounts:', error)
+      } finally {
+        setAccountsLoading(false)
       }
     }
 
@@ -41,7 +46,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
       availableCalendars,
       selectedCalendarId,
       setSelectedCalendarId,
-      loading
+      loading,
+      accountsLoading,
     }}>
       {children}
     </CalendarContext.Provider>

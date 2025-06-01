@@ -14,7 +14,7 @@ export default function CalendarPage() {
   const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
-  const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars } = useCalendar();
+  const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars, loading: calendarLoading } = useCalendar();
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
   const isInitialRender = useRef(true);
   
@@ -25,6 +25,13 @@ export default function CalendarPage() {
   };
 
   const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar, refreshKey);
+
+  // Combine loading states
+  const isLoading = calendarLoading || eventsLoading;
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  useEffect(() => {
+    if (!isLoading) setHasLoadedOnce(true);
+  }, [isLoading]);
 
   // Mark initial render as complete after first render
   useEffect(() => {
@@ -291,16 +298,16 @@ export default function CalendarPage() {
         </div>
         {/* Right side - Day/Week View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          {eventsLoading ? (
+          {isLoading ? (
             <div className="h-full flex items-center justify-center text-gray-400">Loading events...</div>
           ) : (
             <DayWeekView
               events={eventsForCalendar}
               selectedDate={selectedDate}
               viewMode={viewMode}
-              loading={eventsLoading}
+              loading={isLoading}
               error={eventsError}
-              showOverlay={accounts.length === 0}
+              showOverlay={!isLoading && (accounts.length === 0 || availableCalendars.length === 0)}
               hoveredEventId={hoveredEventId}
               setHoveredEventId={setHoveredEventId}
               newAppointment={{

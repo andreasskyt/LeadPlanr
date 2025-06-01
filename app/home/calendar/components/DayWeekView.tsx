@@ -416,18 +416,24 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
 
   return (
     <div className="h-full relative">
-      {viewMode === 'day' ? renderDayView() : renderWeekView()}
-      {showOverlay && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-          <div className="text-center">
-            <div className="text-lg font-semibold text-gray-700 mb-2">No calendar available.</div>
-            <div className="text-gray-500">
-              Go to{' '}
-              <Link href="/home/settings" className="text-blue-600 underline hover:text-blue-800">Settings</Link>
-              {' '}to give access to your calendar.
+      {loading ? (
+        <div className="h-full flex items-center justify-center text-gray-400">Loading events...</div>
+      ) : (
+        <>
+          {viewMode === 'day' ? renderDayView() : renderWeekView()}
+          {showOverlay && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-gray-700 mb-2">No calendar available.</div>
+                <div className="text-gray-500">
+                  Go to{' '}
+                  <Link href="/home/settings" className="text-blue-600 underline hover:text-blue-800">Settings</Link>
+                  {' '}to give access to your calendar.
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
