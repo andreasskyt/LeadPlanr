@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { CalendarEvent } from '@/lib/calendar-service';
 
@@ -399,6 +400,10 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
     });
   };
 
+  const handleDeleteSuggestion = (index: number) => {
+    setSuggestions(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <div className="h-[500px] flex flex-col overflow-hidden p-2">
@@ -485,24 +490,31 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
             <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
               {suggestions.length > 0 ? (
                 suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    className="w-full text-left p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">
-                        {new Date(suggestion.start).toLocaleDateString([], { 
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                      <span>
-                        {formatSuggestionTime(suggestion.start)} - {formatSuggestionTime(suggestion.end)}
-                      </span>
-                      <span className="text-blue-600 ml-2">+{suggestion.addedKilometers} km</span>
-                    </div>
-                  </button>
+                  <div key={index} className="flex items-center gap-2">
+                    <button
+                      className="flex-1 text-left p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">
+                          {new Date(suggestion.start).toLocaleDateString([], { 
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                        <span>
+                          {formatSuggestionTime(suggestion.start)} - {formatSuggestionTime(suggestion.end)}
+                        </span>
+                        <span className="text-blue-600 ml-2">+{suggestion.addedKilometers} km</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSuggestion(index)}
+                      className="p-1 hover:bg-gray-100 rounded-full"
+                    >
+                      <DeleteIcon className="text-gray-400 hover:text-red-500" style={{ fontSize: '1.2rem' }} />
+                    </button>
+                  </div>
                 ))
               ) : (
                 <div className="text-center text-gray-500 py-8">
