@@ -494,18 +494,20 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
                     <button
                       className="flex-1 text-left p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">
-                          {new Date(suggestion.start).toLocaleDateString([], { 
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                        <span>
-                          {formatSuggestionTime(suggestion.start)} - {formatSuggestionTime(suggestion.end)}
-                        </span>
-                        <span className="text-blue-600 ml-2">+{suggestion.addedKilometers} km</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {new Date(suggestion.start).toLocaleDateString([], { 
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                          <span>
+                            {formatSuggestionTime(suggestion.start)} - {formatSuggestionTime(suggestion.end)}
+                          </span>
+                        </div>
+                        <span className="text-blue-600">+{suggestion.addedKilometers} km</span>
                       </div>
                     </button>
                     <button
