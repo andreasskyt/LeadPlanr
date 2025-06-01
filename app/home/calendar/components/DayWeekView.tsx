@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarEvent } from '@/lib/calendar-service';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import Link from 'next/link';
 
 interface DayWeekViewProps {
@@ -25,6 +25,7 @@ interface DayWeekViewProps {
 
 const HOUR_ROW_HEIGHT = 32; // px
 const TIME_COL_WIDTH = 48; // px
+const WORK_START = 8; // 8:00
 
 // Day color palette (Monday=0, Sunday=6)
 export const DAY_COLORS = [
@@ -76,6 +77,24 @@ function LocationIcon({ className = '', size = 14 }: { className?: string; size?
 export default function DayWeekView({ selectedDate, viewMode, events, loading, error, showOverlay, hoveredEventId, setHoveredEventId, newAppointment, setNewAppointment }: DayWeekViewProps) {
   const [hoveredSlot, setHoveredSlot] = useState<{ day: string; hour: number; minute: number } | null>(null);
   const hours = Array.from({ length: 24 }, (_, i) => i);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to WORK_START time when component mounts or when selectedDate/viewMode changes
+  useLayoutEffect(() => {
+    const scrollToWorkStart = () => {
+      if (!scrollContainerRef.current) return;
+      const scrollPosition = WORK_START * HOUR_ROW_HEIGHT;
+      scrollContainerRef.current.scrollTop = scrollPosition;
+    };
+
+    // Try to scroll immediately
+    scrollToWorkStart();
+
+    // Also try after a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(scrollToWorkStart, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedDate, viewMode]);
 
   // Robust week calculation: always returns Monday-Sunday, does not mutate input
   const getWeekDates = (date: Date): Date[] => {
@@ -205,7 +224,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
           <div className="text-xs text-gray-500" />
           <div className="text-center font-semibold text-base">{formatDate(selectedDate)}</div>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto relative">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto relative">
           <div style={{ height: 24 * HOUR_ROW_HEIGHT, position: 'relative' }}>
             {/* Hour grid */}
             <div className="grid" style={{gridTemplateColumns: `48px 1fr`}}>
@@ -286,7 +305,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
             </div>
           ))}
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto relative">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto relative">
           <div style={{ height: 24 * HOUR_ROW_HEIGHT, position: 'relative' }}>
             {/* Hour grid */}
             <div className="grid" style={{gridTemplateColumns: `48px repeat(7, 1fr)`}}>

@@ -16,6 +16,7 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('week');
   const { selectedCalendarId, setSelectedCalendarId, accounts, availableCalendars } = useCalendar();
   const selectedCalendar = availableCalendars.find(cal => cal.id === selectedCalendarId) || null;
+  const isInitialRender = useRef(true);
   
   // Add a key to force refresh of useCalendarEvents
   const [refreshKey, setRefreshKey] = useState(0);
@@ -24,6 +25,16 @@ export default function CalendarPage() {
   };
 
   const { events, loading: eventsLoading, error: eventsError } = useCalendarEvents(accounts, selectedDate, viewMode, selectedCalendar, refreshKey);
+
+  // Mark initial render as complete after first render
+  useEffect(() => {
+    isInitialRender.current = false;
+  }, []);
+
+  // Reset initial render flag when view mode changes
+  useEffect(() => {
+    isInitialRender.current = true;
+  }, [viewMode]);
 
   // Handle calendar selection from URL parameter
   useEffect(() => {
@@ -280,47 +291,51 @@ export default function CalendarPage() {
         </div>
         {/* Right side - Day/Week View */}
         <div className="flex-1 bg-white rounded-lg shadow p-4">
-          <DayWeekView
-            events={eventsForCalendar}
-            selectedDate={selectedDate}
-            viewMode={viewMode}
-            loading={eventsLoading}
-            error={eventsError}
-            showOverlay={accounts.length === 0}
-            hoveredEventId={hoveredEventId}
-            setHoveredEventId={setHoveredEventId}
-            newAppointment={{
-              startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
-              endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
-            }}
-            setNewAppointment={(prev) => {
-              if (typeof prev === 'function') {
-                const newState = prev({
-                  startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
-                  endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
-                });
-                if (newState.startTime) {
-                  const start = new Date(newState.startTime);
-                  setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-                  setNewAppointmentDate(start.toISOString().split('T')[0]);
+          {eventsLoading ? (
+            <div className="h-full flex items-center justify-center text-gray-400">Loading events...</div>
+          ) : (
+            <DayWeekView
+              events={eventsForCalendar}
+              selectedDate={selectedDate}
+              viewMode={viewMode}
+              loading={eventsLoading}
+              error={eventsError}
+              showOverlay={accounts.length === 0}
+              hoveredEventId={hoveredEventId}
+              setHoveredEventId={setHoveredEventId}
+              newAppointment={{
+                startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
+                endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
+              }}
+              setNewAppointment={(prev) => {
+                if (typeof prev === 'function') {
+                  const newState = prev({
+                    startTime: startTime ? new Date(`${newAppointmentDate}T${startTime}`).toISOString() : undefined,
+                    endTime: endTime ? new Date(`${newAppointmentDate}T${endTime}`).toISOString() : undefined
+                  });
+                  if (newState.startTime) {
+                    const start = new Date(newState.startTime);
+                    setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+                    setNewAppointmentDate(start.toISOString().split('T')[0]);
+                  }
+                  if (newState.endTime) {
+                    const end = new Date(newState.endTime);
+                    setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+                  }
+                } else {
+                  if (prev.startTime) {
+                    const start = new Date(prev.startTime);
+                    setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+                    setNewAppointmentDate(start.toISOString().split('T')[0]);
+                  }
+                  if (prev.endTime) {
+                    const end = new Date(prev.endTime);
+                    setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+                  }
                 }
-                if (newState.endTime) {
-                  const end = new Date(newState.endTime);
-                  setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-                }
-              } else {
-                if (prev.startTime) {
-                  const start = new Date(prev.startTime);
-                  setStartTime(start.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-                  setNewAppointmentDate(start.toISOString().split('T')[0]);
-                }
-                if (prev.endTime) {
-                  const end = new Date(prev.endTime);
-                  setEndTime(end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-                }
-              }
-            }}
-          />
+              }}
+            />
+          )}
         </div>
       </div>
       <div className="flex gap-4 flex-1 min-h-0">
