@@ -13,8 +13,6 @@ interface User {
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, firstName: string, lastName: string, phone?: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -24,32 +22,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Helper function to get CSRF token from cookies
-  const getCSRFToken = () => {
-    return document.cookie
-      .split('; ')
-      .find(row => row.startsWith('csrf-token='))
-      ?.split('=')[1]
-  }
-
   // Helper function to make authenticated requests
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-    const token = getCSRFToken()
-    console.log('Making authenticated request with CSRF token:', {
-      url,
-      hasToken: !!token,
-      token
-    })
-
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token && { 'x-csrf-token': token }),
-      ...options.headers,
-    }
-
     const response = await fetch(url, {
       ...options,
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
       credentials: 'include',
     })
 
@@ -86,36 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await fetchWithAuth('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      })
-
-      const userData = await response.json()
-      setUser(userData)
-    } catch (error) {
-      console.error('Login error:', error)
-      throw error
-    }
-  }
-
-  const signup = async (email: string, password: string, firstName: string, lastName: string, phone?: string) => {
-    try {
-      const response = await fetchWithAuth('/api/auth/signup', {
-        method: 'POST',
-        body: JSON.stringify({ email, password, firstName, lastName, phone }),
-      })
-
-      const userData = await response.json()
-      setUser(userData)
-    } catch (error) {
-      console.error('Signup error:', error)
-      throw error
-    }
-  }
-
   const logout = async () => {
     try {
       await fetchWithAuth('/api/auth/logout', {
@@ -129,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )

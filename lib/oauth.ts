@@ -1,62 +1,157 @@
-const MS_CLIENT_ID = process.env.MS_CLIENT_ID as string
-const MS_CLIENT_SECRET = process.env.MS_CLIENT_SECRET as string
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string
-const HOST = process.env.NEXT_PUBLIC_HOST as string
+import { OAuth2Client } from 'google-auth-library';
+import { Client } from '@microsoft/microsoft-graph-client';
+import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
+import { ClientSecretCredential } from '@azure/identity';
 
-if (!MS_CLIENT_ID || !MS_CLIENT_SECRET || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !HOST) {
-  throw new Error('Missing required environment variables for OAuth configuration')
+// OAuth2 configuration
+//     scopes: ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events']
+
+const config = {
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    redirectUri: `${process.env.NEXT_PUBLIC_HOST}/oauth/callback`,
+    scopes: ['openid', 'profile', 'email'],
+    state: 'google'
+  },
+  microsoft: {
+    clientId: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    redirectUri: `${process.env.NEXT_PUBLIC_HOST}/oauth/callback`,
+    scopes: ['openid', 'profile', 'email', 'offline_access', 'https://graph.microsoft.com/Calendars.ReadWrite'],
+    state: 'microsoft'
+  }
+};
+
+// Initialize Google OAuth2 client
+let googleClient: OAuth2Client | null = null;
+function getGoogleClient() {
+  if (!googleClient) {
+    googleClient = new OAuth2Client(
+      config.google.clientId,
+      config.google.clientSecret,
+      config.google.redirectUri
+    );
+  }
+  return googleClient;
 }
 
-interface TokenResponse {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  token_type: string
+// Initialize Microsoft OAuth2 client
+let microsoftClient: Client | null = null;
+function getMicrosoftClient() {
+  if (!microsoftClient) {
+    const microsoftCredential = new ClientSecretCredential(
+      process.env.MICROSOFT_TENANT_ID!,
+      config.microsoft.clientId,
+      config.microsoft.clientSecret
+    );
+
+    const microsoftAuthProvider = new TokenCredentialAuthenticationProvider(microsoftCredential, {
+      scopes: config.microsoft.scopes
+    });
+
+    microsoftClient = Client.initWithMiddleware({
+      authProvider: microsoftAuthProvider
+    });
+  }
+  return microsoftClient;
 }
 
-export async function exchangeMicrosoftToken(code: string): Promise<TokenResponse> {
-  const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+// Generate OAuth2 URLs
+export function getGoogleAuthUrl() {
+  const client = getGoogleClient();
+  return client.generateAuthUrl({
+    access_type: 'offline',
+    scope: config.google.scopes,
+    prompt: 'consent',
+    state: 'google',
+    response_type: 'code',
+  });
+}
+
+export function getMicrosoftAuthUrl() {
+  const url = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+  url.searchParams.append('client_id', config.microsoft.clientId);
+  url.searchParams.append('response_type', 'code');
+  url.searchParams.append('redirect_uri', config.microsoft.redirectUri);
+  url.searchParams.append('response_mode', 'query');
+  url.searchParams.append('scope', config.microsoft.scopes.join(' '));
+  url.searchParams.append('state', 'microsoft');
+  return url.toString();
+}
+
+// Exchange authorization code for tokens
+export async function exchangeGoogleToken(code: string) {
+  const client = getGoogleClient();
+  const { tokens } = await client.getToken(code);
+  return {
+    access_token: tokens.access_token!,
+    refresh_token: tokens.refresh_token,
+    expires_in: tokens.expiry_date ? Math.floor((tokens.expiry_date - Date.now()) / 1000) : undefined,
+    token_type: tokens.token_type,
+    id_token: tokens.id_token
+  };
+}
+
+export async function exchangeMicrosoftToken(code: string) {
+  const url = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/token');
+  const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/x-www-form-urlencoded'
     },
     body: new URLSearchParams({
-      client_id: MS_CLIENT_ID,
-      client_secret: MS_CLIENT_SECRET,
+      client_id: config.microsoft.clientId,
+      client_secret: config.microsoft.clientSecret,
       code,
-      redirect_uri: `${HOST}/oauth/callback`,
-      grant_type: 'authorization_code',
-    }),
-  })
+      redirect_uri: config.microsoft.redirectUri,
+      grant_type: 'authorization_code'
+    })
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to exchange Microsoft token')
+    throw new Error('Failed to exchange Microsoft token');
   }
 
-  return response.json()
+  return response.json();
 }
 
-export async function exchangeGoogleToken(code: string): Promise<TokenResponse> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
+// Get user info from tokens
+export async function getGoogleUserInfo(accessToken: string) {
+  const client = getGoogleClient();
+  const ticket = await client.verifyIdToken({
+    idToken: accessToken,
+    audience: config.google.clientId
+  });
+  const payload = ticket.getPayload()!;
+  return {
+    id: payload.sub,
+    email: payload.email!,
+    firstName: payload.given_name!,
+    lastName: payload.family_name!,
+    picture: payload.picture
+  };
+}
+
+export async function getMicrosoftUserInfo(accessToken: string) {
+  const response = await fetch('https://graph.microsoft.com/v1.0/me', {
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
-      code,
-      redirect_uri: `${HOST}/oauth/callback`,
-      grant_type: 'authorization_code',
-    }),
-  })
+      'Authorization': `Bearer ${accessToken}`
+    }
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to exchange Google token')
+    throw new Error('Failed to get Microsoft user info');
   }
 
-  return response.json()
+  const data = await response.json();
+  return {
+    id: data.id,
+    email: data.mail || data.userPrincipalName,
+    firstName: data.givenName,
+    lastName: data.surname,
+    picture: null
+  };
 }
 
 export async function revokeMicrosoftToken(accessToken: string, refreshToken?: string | null): Promise<void> {
@@ -67,8 +162,8 @@ export async function revokeMicrosoftToken(accessToken: string, refreshToken?: s
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: MS_CLIENT_ID,
-      client_secret: MS_CLIENT_SECRET,
+      client_id: config.microsoft.clientId,
+      client_secret: config.microsoft.clientSecret,
       token: accessToken,
     }),
   })
@@ -87,8 +182,8 @@ export async function revokeMicrosoftToken(accessToken: string, refreshToken?: s
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: MS_CLIENT_ID,
-        client_secret: MS_CLIENT_SECRET,
+        client_id: config.microsoft.clientId,
+        client_secret: config.microsoft.clientSecret,
         token: refreshToken,
       }),
     })

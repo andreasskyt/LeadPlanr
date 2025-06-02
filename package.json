@@ -10,10 +10,12 @@
     "migrate": "ts-node scripts/migrate.ts"
   },
   "dependencies": {
+    "@azure/identity": "^4.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
     "@mui/x-date-pickers": "^8.5.0",
@@ -25,6 +27,7 @@
     "bcrypt": "^5.1.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "google-auth-library": "^9.15.1",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.511.0",

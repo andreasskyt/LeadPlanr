@@ -557,7 +557,7 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
                 ))
               ) : (
                 <div className="text-center text-gray-500 py-8">
-                  {isLocationResolved ? 'No suggestions available' : 'Enter and resolve a location to see suggestions'}
+                  {isLocationResolved ? 'No suggestions available' : 'Enter a location to see suggestions'}
                 </div>
               )}
             </div>

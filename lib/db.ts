@@ -5,8 +5,6 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set')
 }
 
-// console.log('Attempting to connect to database...')
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
@@ -122,7 +120,7 @@ export const calendarAccounts = {
   // Get calendar accounts for a user
   async getByUserId(userId: string) {
     const result = await query<CalendarAccount>(
-      'SELECT * FROM calendar_accounts WHERE user_id = $1',
+      'SELECT * FROM calendar_accounts WHERE user_id = $1 AND calendar_access = true',
       [userId]
     ).then(result => result.rows)
 

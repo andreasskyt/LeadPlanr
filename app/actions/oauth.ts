@@ -15,7 +15,7 @@ export async function initiateMicrosoftOAuth() {
     client_id: MS_CLIENT_ID,
     redirect_uri: `${HOST}/oauth/callback`,
     response_type: 'code',
-    scope: 'Calendars.ReadWrite offline_access',
+    scope: 'openid profile email Calendars.ReadWrite offline_access',
     prompt: 'consent',
     state: 'microsoft'
   })
@@ -28,11 +28,11 @@ export async function initiateGoogleOAuth() {
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: `${HOST}/oauth/callback`,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/calendar',
+    scope: 'openid profile email https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events',
     access_type: 'offline',
     prompt: 'consent',
     state: 'google'
   })
 
   redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
-} 
+}
