@@ -73,7 +73,7 @@ export async function POST(request: Request) {
           client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
           refresh_token: account.refresh_token!,
           grant_type: 'refresh_token',
-          scope: 'https://graph.microsoft.com/Calendars.Read',
+          scope: 'https://graph.microsoft.com/Calendars.ReadWrite',
         }),
       });
 

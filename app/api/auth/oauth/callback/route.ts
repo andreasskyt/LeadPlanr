@@ -64,18 +64,16 @@ export async function GET(req: NextRequest) {
     )
 
     const user = result.rows[0]
+    const scopes = tokenResponse.scope || '';
 
-    // Extract scopes from token response (Google: tokens.scope, Microsoft: tokenResponse.scope)
-    let scopes: string = '';
-    if (provider === 'google') {
-      scopes = tokenResponse.scope || '';
-    } else if (provider === 'microsoft') {
-      scopes = tokenResponse.scope || '';
-    }
-    // Normalize and check if only openid, profile, email
-    const scopeSet = new Set(scopes.split(/\s+/).filter(Boolean));
-    const minimalScopes = new Set(['openid', 'profile', 'email']);
-    const onlyMinimal = scopeSet.size === minimalScopes.size && Array.from(scopeSet).every(s => minimalScopes.has(s));
+    console.log('[OAuth callback] Scopes insert:', {
+      provider,
+      accessToken: tokenResponse.access_token,
+      expires_in: tokenResponse.expires_in,
+      userId: user.id,
+      oauthId: userInfo.id,
+      scopes,
+    });
 
     // Prepare values for calendar_accounts
     let accessToken = null;
@@ -84,20 +82,10 @@ export async function GET(req: NextRequest) {
     let validTo = null;
     let calendarAccess = false;
 
-    if (!onlyMinimal) {
+    if (tokenResponse.refresh_token) {
       // Only save access_token if we have more than minimal scopes
       accessToken = tokenResponse.access_token;
-      // Try to get existing refresh_token if not present in response
-      if (tokenResponse.refresh_token) {
-        encryptedRefreshToken = encrypt(tokenResponse.refresh_token);
-      } else {
-        // Query for existing refresh_token
-        const existing = await pool.query(
-          `SELECT refresh_token FROM calendar_accounts WHERE user_id = $1 AND provider = $2 AND oauth_id = $3`,
-          [user.id, provider, userInfo.id]
-        );
-        encryptedRefreshToken = existing.rows[0]?.refresh_token || null;
-      }
+      encryptedRefreshToken = encrypt(tokenResponse.refresh_token);
       validFrom = new Date();
       validTo = tokenResponse.expires_in ? new Date(Date.now() + tokenResponse.expires_in * 1000) : null;
       calendarAccess = true;
@@ -139,23 +127,15 @@ export async function GET(req: NextRequest) {
       await pool.query(
         `INSERT INTO calendar_accounts (
           provider,
-          access_token,
-          valid_from,
-          valid_to,
           user_id,
           oauth_id,
-          scopes,
           calendar_access
         ) VALUES ($1, $2, $3, $4)
         ON CONFLICT (user_id, provider, oauth_id) DO NOTHING`,
         [
           provider,
-          accessToken,
-          validFrom,
-          validTo,
           user.id,
           userInfo.id, 
-          scopes,
           calendarAccess
         ]
       )

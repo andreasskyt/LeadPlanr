@@ -49,6 +49,7 @@ export async function DELETE(
     }
 
     // Revoke the access token with the provider
+    let revokeError = null;
     try {
       console.log('Attempting to revoke tokens for provider:', account.provider);
       if (account.provider === 'google') {
@@ -67,23 +68,25 @@ export async function DELETE(
       console.log('Tokens revoked successfully');
     } catch (error) {
       console.error('Failed to revoke tokens:', error);
-      // If token revocation fails, we should still delete the account
-      // but we need to make sure the user knows they need to re-authenticate
-      await calendarAccounts.delete(params.id);
-      return NextResponse.json({ 
-        success: true,
-        message: 'Account deleted but token revocation failed. You will need to re-authenticate to add this calendar again.'
-      });
+      revokeError = error;
     }
 
-    // Delete the account
-    console.log('Deleting account from database');
-    await calendarAccounts.delete(params.id);
-    console.log('Account deleted successfully');
+    // Always clear sensitive fields and set calendar_access to false
+    console.log('Disconnecting account (clearing tokens and disabling access)');
+    await calendarAccounts.update(params.id, {
+      access_token: null,
+      refresh_token: null,
+      valid_from: undefined,
+      valid_to: undefined,
+      calendar_access: false,
+    });
+    console.log('Account disconnected successfully');
 
     return NextResponse.json({ 
       success: true,
-      message: 'Account deleted successfully. You will need to re-authenticate to add this calendar again.'
+      message: revokeError
+        ? 'Account disconnected, but token revocation failed. You may need to re-authenticate to add this calendar again.'
+        : 'Account disconnected successfully. You can reconnect this calendar later.'
     });
   } catch (error) {
     console.error('Error deleting calendar account:', error);

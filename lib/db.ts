@@ -75,13 +75,14 @@ export async function query<T = any>(text: string, params?: any[]) {
 export interface CalendarAccount {
   id: number;
   provider: string;
-  access_token: string;
+  access_token: string | null;
   refresh_token: string | null;
-  valid_from: Date;
+  valid_from: Date | null;
   valid_to: Date | null;
   user_id: number;
   created_at: Date;
   updated_at: Date;
+  calendar_access?: boolean;
 }
 
 // Calendar account operations
@@ -166,8 +167,9 @@ export const calendarAccounts = {
            refresh_token = COALESCE($3, refresh_token),
            valid_from = COALESCE($4, valid_from),
            valid_to = COALESCE($5, valid_to),
-           user_id = COALESCE($6, user_id)
-       WHERE id = $7
+           user_id = COALESCE($6, user_id),
+           calendar_access = COALESCE($7, calendar_access)
+       WHERE id = $8
        RETURNING *`,
       [
         data.provider,
@@ -176,6 +178,7 @@ export const calendarAccounts = {
         data.valid_from,
         data.valid_to,
         data.user_id,
+        data.calendar_access,
         id
       ]
     )
