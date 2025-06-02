@@ -16,8 +16,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=oauth_failed`)
   }
 
-  if (!code || !state) {
-    console.error('Missing code or state')
+  if (!code) {
+    console.error('Missing code')
+    return NextResponse.redirect(`${origin}/login?error=invalid_request`)
+  }
+
+  if (!state) {
+    console.error('Missing state')
     return NextResponse.redirect(`${origin}/login?error=invalid_request`)
   }
 
@@ -59,9 +64,6 @@ export async function GET(req: NextRequest) {
     )
 
     const user = result.rows[0]
-
-    // Log provider and userInfo.id for debugging
-    console.log('provider:', provider, 'userInfo.id:', userInfo.id)
 
     // Extract scopes from token response (Google: tokens.scope, Microsoft: tokenResponse.scope)
     let scopes: string = '';

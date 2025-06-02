@@ -80,18 +80,31 @@ function MapBounds({ events, newAppointmentMarker }: { events: MapViewProps['eve
   useEffect(() => {
     if (!map || (events.length === 0 && !newAppointmentMarker)) return;
 
-    const bounds = new google.maps.LatLngBounds();
-    events.forEach(event => {
-      if (event.lat && event.long) {
-        bounds.extend({ lat: event.lat, lng: event.long });
+    // Count valid markers
+    const validMarkers = events.filter(e => e.lat && e.long).length + (newAppointmentMarker ? 1 : 0);
+
+    if (validMarkers === 1) {
+      // For single marker, center on it with fixed zoom
+      const marker = events.find(e => e.lat && e.long) || newAppointmentMarker;
+      if (marker) {
+        map.setCenter({ lat: marker.lat!, lng: marker.long! });
+        map.setZoom(11);
       }
-    });
-    if (newAppointmentMarker) {
-      bounds.extend({ lat: newAppointmentMarker.lat, lng: newAppointmentMarker.long });
+    } else {
+      // For multiple markers, use fitBounds
+      const bounds = new google.maps.LatLngBounds();
+      events.forEach(event => {
+        if (event.lat && event.long) {
+          bounds.extend({ lat: event.lat, lng: event.long });
+        }
+      });
+      if (newAppointmentMarker) {
+        bounds.extend({ lat: newAppointmentMarker.lat, lng: newAppointmentMarker.long });
+      }
+      // Add some padding to the bounds
+      const padding = { top: 50, right: 50, bottom: 50, left: 50 };
+      map.fitBounds(bounds, padding);
     }
-    // Add some padding to the bounds
-    const padding = { top: 50, right: 50, bottom: 50, left: 50 };
-    map.fitBounds(bounds, padding);
   }, [map, events, newAppointmentMarker]);
 
   return null;
