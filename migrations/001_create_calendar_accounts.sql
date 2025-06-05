@@ -1,34 +1,53 @@
--- Create calendar_accounts table
-CREATE TABLE calendar_accounts (
-    id SERIAL PRIMARY KEY,
-    provider VARCHAR(50) NOT NULL, -- 'microsoft' or 'google'
-    access_token TEXT NOT NULL,
-    refresh_token TEXT,
-    valid_from TIMESTAMP WITH TIME ZONE NOT NULL,
-    valid_to TIMESTAMP WITH TIME ZONE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Table: public.calendar_accounts
 
--- Add index on user_id for faster lookups
-CREATE INDEX IF NOT EXISTS idx_calendar_accounts_user_id ON calendar_accounts(user_id);
+-- DROP TABLE IF EXISTS public.calendar_accounts;
 
--- Add trigger to automatically update updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+CREATE TABLE IF NOT EXISTS public.calendar_accounts
+(
+    id integer NOT NULL DEFAULT nextval('calendar_accounts_id_seq'::regclass),
+    provider character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    access_token text COLLATE pg_catalog."default",
+    refresh_token text COLLATE pg_catalog."default",
+    valid_from timestamp with time zone,
+    valid_to timestamp with time zone,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    oauth_id character varying(255) COLLATE pg_catalog."default",
+    scopes character varying(2000) COLLATE pg_catalog."default",
+    calendar_access boolean,
+    CONSTRAINT calendar_accounts_pkey PRIMARY KEY (id),
+    CONSTRAINT calendar_accounts_user_id_provider_oauth_id_key UNIQUE (user_id, provider, oauth_id),
+    CONSTRAINT calendar_accounts_user_id_fkey FOREIGN KEY (user_id)
+        REFERENCES public.users (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+)
 
--- Create trigger
-CREATE TRIGGER update_calendar_accounts_updated_at
-    BEFORE UPDATE ON calendar_accounts
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.calendar_accounts
+    OWNER to fap_user;
+
+GRANT ALL ON TABLE public.calendar_accounts TO fap_user;
+-- Index: idx_calendar_accounts_user_id
+
+-- DROP INDEX IF EXISTS public.idx_calendar_accounts_user_id;
+
+CREATE INDEX IF NOT EXISTS idx_calendar_accounts_user_id
+    ON public.calendar_accounts USING btree
+    (user_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+-- Trigger: update_calendar_accounts_updated_at
+
+-- DROP TRIGGER IF EXISTS update_calendar_accounts_updated_at ON public.calendar_accounts;
+
+CREATE OR REPLACE TRIGGER update_calendar_accounts_updated_at
+    BEFORE UPDATE 
+    ON public.calendar_accounts
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Grant permissions to fap_user
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO fap_user;
-GRANT SELECT, INSERT, UPDATE, DELETE ON calendar_accounts TO fap_user; 
