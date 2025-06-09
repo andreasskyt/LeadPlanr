@@ -43,5 +43,3 @@ CREATE OR REPLACE TRIGGER update_users_updated_at
     ON public.users
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
-
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO lp_user;
