@@ -1,7 +1,11 @@
--- Table: public.location_cache
+-- Drop table and sequence if they exist
+-- DROP TABLE IF EXISTS public.location_cache CASCADE;
+-- DROP SEQUENCE IF EXISTS location_cache_id_seq;
 
--- DROP TABLE IF EXISTS public.location_cache;
+-- Create sequence
+CREATE SEQUENCE IF NOT EXISTS location_cache_id_seq;
 
+-- Create table
 CREATE TABLE IF NOT EXISTS public.location_cache
 (
     id integer NOT NULL DEFAULT nextval('location_cache_id_seq'::regclass),
@@ -11,10 +15,7 @@ CREATE TABLE IF NOT EXISTS public.location_cache
     CONSTRAINT location_cache_pkey PRIMARY KEY (id),
     CONSTRAINT location_cache_location_key UNIQUE (location)
 )
-
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.location_cache
-    OWNER to ulrik;
-
-GRANT ALL ON TABLE public.location_cache TO fap_user;
+ALTER TABLE IF EXISTS public.location_cache OWNER to lp_user;
+GRANT ALL ON TABLE public.location_cache TO lp_user;

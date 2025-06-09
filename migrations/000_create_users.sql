@@ -1,7 +1,12 @@
--- Table: public.users
+-- Drop table and sequence if they exist
+-- DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
+-- DROP TABLE IF EXISTS public.users CASCADE;
+-- DROP SEQUENCE IF EXISTS users_id_seq;
 
--- DROP TABLE IF EXISTS public.users;
+-- Create sequence
+CREATE SEQUENCE IF NOT EXISTS users_id_seq;
 
+-- Create table
 CREATE TABLE IF NOT EXISTS public.users
 (
     id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass),
@@ -15,10 +20,11 @@ CREATE TABLE IF NOT EXISTS public.users
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT users_email_key UNIQUE (email)
 )
-
 TABLESPACE pg_default;
 
-GRANT ALL ON TABLE public.users TO fap_user;
+ALTER TABLE IF EXISTS public.users OWNER to lp_user;
+GRANT ALL ON TABLE public.users TO lp_user;
+
 -- Index: users_email_idx
 
 -- DROP INDEX IF EXISTS public.users_email_idx;
@@ -37,3 +43,5 @@ CREATE OR REPLACE TRIGGER update_users_updated_at
     ON public.users
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO lp_user;

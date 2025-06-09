@@ -1,7 +1,12 @@
--- Table: public.calendar_accounts
+-- Drop table and sequence if they exist
+-- DROP TRIGGER IF EXISTS update_calendar_accounts_updated_at ON public.calendar_accounts;
+-- DROP TABLE IF EXISTS public.calendar_accounts CASCADE;
+-- DROP SEQUENCE IF EXISTS calendar_accounts_id_seq;
 
--- DROP TABLE IF EXISTS public.calendar_accounts;
+-- Create sequence
+CREATE SEQUENCE IF NOT EXISTS calendar_accounts_id_seq;
 
+-- Create table
 CREATE TABLE IF NOT EXISTS public.calendar_accounts
 (
     id integer NOT NULL DEFAULT nextval('calendar_accounts_id_seq'::regclass),
@@ -23,25 +28,15 @@ CREATE TABLE IF NOT EXISTS public.calendar_accounts
         ON UPDATE NO ACTION
         ON DELETE CASCADE
 )
-
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.calendar_accounts
-    OWNER to fap_user;
-
-GRANT ALL ON TABLE public.calendar_accounts TO fap_user;
--- Index: idx_calendar_accounts_user_id
-
--- DROP INDEX IF EXISTS public.idx_calendar_accounts_user_id;
+ALTER TABLE IF EXISTS public.calendar_accounts OWNER to lp_user;
+GRANT ALL ON TABLE public.calendar_accounts TO lp_user;
 
 CREATE INDEX IF NOT EXISTS idx_calendar_accounts_user_id
     ON public.calendar_accounts USING btree
     (user_id ASC NULLS LAST)
     TABLESPACE pg_default;
-
--- Trigger: update_calendar_accounts_updated_at
-
--- DROP TRIGGER IF EXISTS update_calendar_accounts_updated_at ON public.calendar_accounts;
 
 CREATE OR REPLACE TRIGGER update_calendar_accounts_updated_at
     BEFORE UPDATE 
@@ -49,5 +44,4 @@ CREATE OR REPLACE TRIGGER update_calendar_accounts_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
--- Grant permissions to fap_user
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO fap_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO lp_user;
