@@ -219,8 +219,8 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     });
     const dayKey = selectedDate.toISOString().split('T')[0];
 
-    // Calculate suggestion marker position if we have a selected suggestion
-    let suggestionMarker = null;
+    // Calculate suggestion marker data if we have a selected suggestion
+    let suggestionData = null;
     if (selectedSuggestion) {
       const start = new Date(selectedSuggestion.start);
       const end = new Date(selectedSuggestion.end);
@@ -229,17 +229,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
       const topPercent = (startMinutes / 1440) * 100;
       const heightPercent = ((endMinutes - startMinutes) / 1440) * 100;
       
-      suggestionMarker = (
-        <div 
-          className="absolute w-[10px] bg-blue-500/50 pointer-events-none"
-          style={{
-            top: `${topPercent}%`,
-            height: `${heightPercent}%`,
-            left: TIME_COL_WIDTH,
-            zIndex: 5
-          }}
-        />
-      );
+      suggestionData = { topPercent, heightPercent };
     }
 
     return (
@@ -265,8 +255,6 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
                 </React.Fragment>
               ))}
             </div>
-            {/* Suggestion marker */}
-            {suggestionMarker}
             {/* Slot overlays: absolutely positioned, below events */}
             <div className="absolute left-[48px] right-0 top-0 bottom-0" style={{zIndex: 10, height: '100%'}}>
               {hours.map(hour => (
@@ -304,6 +292,18 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
                   );
                 })
               ))}
+              {/* Suggestion marker */}
+              {suggestionData && (
+                <div 
+                  className="absolute w-[10px] bg-blue-500/50 pointer-events-none"
+                  style={{
+                    top: `${suggestionData.topPercent}%`,
+                    height: `${suggestionData.heightPercent}%`,
+                    left: 0,
+                    zIndex: 5
+                  }}
+                />
+              )}
               {/* Event blocks */}
               {eventsForDay.map(event => renderEventBlock(event, selectedDate, DAY_COLORS[dayOfWeekIdx]))}
             </div>
@@ -322,8 +322,8 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
     }
     const weekDates = getWeekDates(selectedDate);
 
-    // Calculate suggestion marker position if we have a selected suggestion
-    let suggestionMarker = null;
+    // Calculate suggestion marker data if we have a selected suggestion
+    let suggestionData = null;
     if (selectedSuggestion) {
       const start = new Date(selectedSuggestion.start);
       const end = new Date(selectedSuggestion.end);
@@ -340,18 +340,7 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
       );
       
       if (dayIndex !== -1) {
-        const leftPercent = (dayIndex / 7) * 100;
-        suggestionMarker = (
-          <div 
-            className="absolute w-[10px] bg-blue-500/50 pointer-events-none"
-            style={{
-              top: `${topPercent}%`,
-              height: `${heightPercent}%`,
-              left: `calc(${TIME_COL_WIDTH}px + ${leftPercent}%)`,
-              zIndex: 5
-            }}
-          />
-        );
+        suggestionData = { topPercent, heightPercent, dayIndex };
       }
     }
 
@@ -387,8 +376,6 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
                 </React.Fragment>
               ))}
             </div>
-            {/* Suggestion marker */}
-            {suggestionMarker}
             {/* Slot overlays: absolutely positioned, below events */}
             <div className="absolute grid" style={{gridTemplateColumns: `repeat(7, 1fr)`, left: TIME_COL_WIDTH, right: 0, top: 0, bottom: 0, pointerEvents: 'none', zIndex: 10, height: '100%'}}>
               {weekDates.map((date, idx) => {
@@ -439,6 +426,18 @@ export default function DayWeekView({ selectedDate, viewMode, events, loading, e
                         );
                       })
                     ))}
+                    {/* Suggestion marker for this day */}
+                    {suggestionData && suggestionData.dayIndex === idx && (
+                      <div 
+                        className="absolute w-[10px] bg-blue-500/50 pointer-events-none"
+                        style={{
+                          top: `${suggestionData.topPercent}%`,
+                          height: `${suggestionData.heightPercent}%`,
+                          left: 0,
+                          zIndex: 5
+                        }}
+                      />
+                    )}
                     {/* Event blocks */}
                     {eventsForThisDay.map(event => renderEventBlock(event, date, DAY_COLORS[idx]))}
                   </div>
