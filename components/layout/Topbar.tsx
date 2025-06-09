@@ -22,7 +22,7 @@ export function Topbar() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold text-indigo-600">Field Appointment Planner</span>
+              <span className="text-xl font-bold text-indigo-600">LeadPlanr</span>
             </div>
           </div>
 

@@ -23,7 +23,7 @@ export function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-lg h-full min-h-0 flex flex-col self-stretch">
       <div className="h-16 flex items-center justify-center border-b">
-        <h1 className="text-xl font-bold text-gray-800">Field Appointment Planner</h1>
+        <h1 className="text-xl font-bold text-gray-800">LeadPlanr</h1>
       </div>
       <nav className="mt-5 px-2">
         <div className="space-y-1">

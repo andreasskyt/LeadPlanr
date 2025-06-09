@@ -41,7 +41,7 @@ function HomeLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex items-center gap-8">
               <Link href="/" className="text-xl font-semibold text-gray-800 hover:text-gray-900">
-                Field Appointment Planner
+                LeadPlanr
               </Link>
               <div className="flex items-center gap-4">
                 <h2 className="text-lg text-gray-600">{getPageTitle()}</h2>
