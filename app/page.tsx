@@ -9,20 +9,28 @@ export default function LandingPage() {
 
   const features = [
     {
+      title: 'Great Overview',
+      description: 'See your appointments in the calendar and on a map at the same time. It is easy to see the routes on each day and correlate with the events in your calendar.'
+    },
+    {
+      title: 'Intelligent Suggestions',
+      description: 'Based on your availability and existing appointments, we will suggest the best times for new appointments with your clients.'
+    },
+    {
       title: 'Smart Route Planning',
       description: 'Optimize your travel routes by considering geography and travel time between appointments. Save time and reduce travel costs.'
     },
     {
-      title: 'Intelligent Scheduling',
-      description: 'Find the perfect time slots for appointments while taking into account travel time, location, and your availability.'
+      title: 'Efficient Scheduling',
+      description: 'Quickly find the perfect time slots for appointments while taking into account travel time, location, and your availability. You will find the best time to visit a client in a few seconds.'
     },
     {
-      title: 'Location Management',
-      description: 'Easily manage and organize client locations, with detailed address information and travel time estimates.'
+      title: 'Easy Calendar Event Creation',
+      description: 'Create the perfect appointment in your calendar with a single click.'
     },
     {
-      title: 'Calendar & Availability',
-      description: 'Keep track of your appointments and availability in one place. Share your schedule with clients and team members.'
+      title: 'Easy Integration',
+      description: 'Add links from your CRM or lead management system to LeadPlanr including an event title and location (address), then you save entering any details manually.'
     }
   ]
 
@@ -64,26 +72,16 @@ export default function LandingPage() {
       {/* Hero section */}
       <div className="relative bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+          <div className="relative z-10 pb-10 bg-white sm:pb-10 md:pb-10 lg:max-w-2xl lg:w-full lg:pb-10 xl:pb-10">
+            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-10 sm:px-6 md:mt-10 lg:mt-8 lg:px-8 xl:mt-10">
               <div className="sm:text-center lg:text-left">
                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block">Plan your field</span>
+                  <span className="block">Plan your lead</span>
                   <span className="block text-indigo-600">appointments smarter</span>
                 </h1>
                 <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                   Optimize your travel routes and schedule appointments efficiently. Perfect for sales professionals and field service teams who need to manage multiple client visits.
                 </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                  <div className="rounded-md shadow">
-                    <Link
-                      href="/login"
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
-                    >
-                      Login
-                    </Link>
-                  </div>
-                </div>
               </div>
             </main>
           </div>
@@ -96,7 +94,7 @@ export default function LandingPage() {
           <div className="lg:text-center">
             <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Everything you need to manage field appointments
+              Everything you need to manage lead appointments
             </p>
           </div>
 
