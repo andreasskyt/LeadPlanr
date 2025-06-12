@@ -94,6 +94,17 @@ class CalendarService {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        
+        // If re-authentication is required, redirect to the appropriate OAuth endpoint
+        if (errorData.error === 'REAUTH_REQUIRED') {
+          const authEndpoint = errorData.provider === 'microsoft' 
+            ? '/api/auth/microsoft'
+            : '/api/auth/google';
+          window.location.href = authEndpoint;
+          return null;
+        }
+        
         const errorText = await response.text();
         throw new Error(`Failed to refresh token: ${response.status} ${errorText}`);
       }

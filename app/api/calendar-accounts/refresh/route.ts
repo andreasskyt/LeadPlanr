@@ -50,6 +50,18 @@ export async function POST(request: Request) {
 
       if (!response.ok) {
         const errorText = await response.text();
+        const errorData = JSON.parse(errorText);
+        
+        // Check if the error is due to an invalid refresh token
+        if (errorData.error === 'invalid_grant') {
+          // Return a specific status code that indicates re-authentication is needed
+          return new NextResponse(JSON.stringify({
+            error: 'REAUTH_REQUIRED',
+            provider: 'google',
+            message: 'Refresh token is invalid. Please re-authenticate.'
+          }), { status: 401 });
+        }
+        
         throw new Error(`Failed to refresh Google token: ${response.status} ${errorText}`);
       }
 
@@ -79,6 +91,18 @@ export async function POST(request: Request) {
 
       if (!response.ok) {
         const errorText = await response.text();
+        const errorData = JSON.parse(errorText);
+        
+        // Check if the error is due to an invalid refresh token
+        if (errorData.error === 'invalid_grant') {
+          // Return a specific status code that indicates re-authentication is needed
+          return new NextResponse(JSON.stringify({
+            error: 'REAUTH_REQUIRED',
+            provider: 'microsoft',
+            message: 'Refresh token is invalid. Please re-authenticate.'
+          }), { status: 401 });
+        }
+        
         throw new Error(`Failed to refresh Microsoft token: ${response.status} ${errorText}`);
       }
 
