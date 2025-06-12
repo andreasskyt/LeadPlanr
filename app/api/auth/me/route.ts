@@ -3,6 +3,9 @@ import type { NextRequest } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
 import pool from '@/lib/db'
 
+// Tell Next.js this route should be dynamic
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Get token from cookie
