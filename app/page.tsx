@@ -72,12 +72,13 @@ export default function LandingPage() {
       {/* Hero section */}
       <div className="relative bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-10 bg-white sm:pb-10 md:pb-10 lg:max-w-2xl lg:w-full lg:pb-10 xl:pb-10">
-            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-10 sm:px-6 md:mt-10 lg:mt-8 lg:px-8 xl:mt-10">
+          <div className="relative z-10 pb-6 bg-white sm:pb-6 md:pb-6 lg:max-w-2xl lg:w-full lg:pb-6 xl:pb-6">
+            <main className="mt-4 mx-auto max-w-7xl px-4 sm:mt-6 sm:px-6 md:mt-8 lg:mt-10 lg:px-8 xl:mt-12">
               <div className="sm:text-center lg:text-left">
                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
                   <span className="block">Plan your lead</span>
-                  <span className="block text-indigo-600">appointments smarter</span>
+                  <span className="block text-indigo-600">appointments</span>
+                  <span className="block text-indigo-600">smarter</span>
                 </h1>
                 <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                   Optimize your travel routes and schedule appointments efficiently. Perfect for sales professionals and field service teams who need to manage multiple client visits.
@@ -99,7 +100,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-10">
-            <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-10">
               {features.map((feature) => (
                 <div key={feature.title} className="relative">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">{feature.title}</h3>
