@@ -6,8 +6,8 @@ import { AuthProvider } from '@/contexts/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Field Appointment Planner',
-  description: 'Field Appointment Planner makes it easy to plan field appointments in a way that takes into account the time it takes to travel between appointments.',
+  title: 'LeadPlanr',
+  description: 'LeadPlanr makes it easy to plan appointments in a way that takes into account the time it takes to travel between appointments.',
 }
 
 export default function RootLayout({
