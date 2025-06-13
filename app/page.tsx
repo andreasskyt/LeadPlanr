@@ -3,9 +3,25 @@
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileMenu } from '@/components/ProfileMenu'
+import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
 
 export default function LandingPage() {
   const { user } = useAuth()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Close modal on ESC
+  useEffect(() => {
+    if (!isModalOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsModalOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
+
+  const openModal = useCallback(() => setIsModalOpen(true), [])
+  const closeModal = useCallback(() => setIsModalOpen(false), [])
 
   const features = [
     {
@@ -72,21 +88,67 @@ export default function LandingPage() {
       {/* Hero section */}
       <div className="relative bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-6 bg-white sm:pb-6 md:pb-6 lg:max-w-2xl lg:w-full lg:pb-6 xl:pb-6">
+          <div className="relative z-10 pb-6 bg-white sm:pb-6 md:pb-6 lg:max-w-full lg:w-full lg:pb-6 xl:pb-6">
             <main className="mt-4 mx-auto max-w-7xl px-4 sm:mt-6 sm:px-6 md:mt-8 lg:mt-10 lg:px-8 xl:mt-12">
-              <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block">Plan your lead</span>
-                  <span className="block text-indigo-600">appointments</span>
-                  <span className="block text-indigo-600">smarter</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Optimize your travel routes and schedule appointments efficiently. Perfect for sales professionals and field service teams who need to manage multiple client visits.
-                </p>
+              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+                <div className="flex-1 sm:text-center lg:text-left">
+                  <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                    <span className="block">Plan your lead</span>
+                    <span className="block text-indigo-600">appointments</span>
+                    <span className="block text-indigo-600">smarter</span>
+                  </h1>
+                  <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                    Optimize your travel routes and schedule appointments efficiently. Perfect for sales professionals and field service teams who need to manage multiple client visits.
+                  </p>
+                </div>
+                <div className="flex-1 flex justify-center lg:justify-end w-full max-w-2xl">
+                  <button onClick={openModal} className="focus:outline-none">
+                    <Image
+                      src="/images/screenshot1.png"
+                      alt="LeadPlanr app screenshot"
+                      width={1000}
+                      height={667}
+                      className="rounded-lg shadow-lg object-contain w-full h-auto transition-transform hover:scale-105"
+                      priority
+                    />
+                  </button>
+                </div>
               </div>
             </main>
           </div>
         </div>
+        {/* Modal Popup */}
+        {isModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={closeModal}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="relative max-w-6xl w-full flex justify-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <Image
+                src="/images/screenshot1.png"
+                alt="LeadPlanr app screenshot large"
+                width={2200}
+                height={1467}
+                className="rounded-lg shadow-2xl object-contain w-full h-auto border-4 border-white"
+                priority
+              />
+              <button
+                onClick={closeModal}
+                className="absolute top-2 right-2 text-white bg-black/60 rounded-full p-2 hover:bg-black/80 focus:outline-none"
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Feature section */}
