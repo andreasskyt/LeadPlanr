@@ -364,7 +364,7 @@ export default function CalendarPage() {
       </div>
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Left side - New Appointment Form */}
-        <div className="w-[320px] bg-white rounded-lg shadow">
+        <div className="w-[320px] bg-white rounded-lg shadow flex flex-col">
           <NewAppointmentView
             selectedDate={newAppointmentDate}
             setSelectedDate={setNewAppointmentDate}

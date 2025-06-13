@@ -438,7 +438,7 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <div className="h-[500px] flex flex-col overflow-hidden p-2">
+      <div className="h-full flex flex-col overflow-hidden p-2">
         <div className="shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">New Appointment</h3>
