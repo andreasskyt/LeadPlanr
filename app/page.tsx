@@ -101,13 +101,13 @@ export default function LandingPage() {
                     Optimize your travel routes and schedule appointments efficiently. Perfect for sales professionals and field service teams who need to manage multiple client visits.
                   </p>
                 </div>
-                <div className="flex-1 flex justify-center lg:justify-end w-full max-w-2xl">
+                <div className="flex-1 flex justify-center lg:justify-end w-full max-w-3xl">
                   <button onClick={openModal} className="focus:outline-none">
                     <Image
-                      src="/images/screenshot1.png"
+                      src="/images/screenshot1-landing.jpg"
                       alt="LeadPlanr app screenshot"
-                      width={1000}
-                      height={667}
+                      width={1400}
+                      height={934}
                       className="rounded-lg shadow-lg object-contain w-full h-auto transition-transform hover:scale-105"
                       priority
                     />
@@ -130,7 +130,7 @@ export default function LandingPage() {
               onClick={e => e.stopPropagation()}
             >
               <Image
-                src="/images/screenshot1.png"
+                src="/images/screenshot1-popup.jpg"
                 alt="LeadPlanr app screenshot large"
                 width={2200}
                 height={1467}
