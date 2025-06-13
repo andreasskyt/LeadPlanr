@@ -66,14 +66,6 @@ function HomeLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {user && (
-                <Link
-                  href="/home/settings"
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <Cog6ToothIcon className="h-6 w-6" />
-                </Link>
-              )}
               <ProfileMenu user={user} />
             </div>
           </div>
