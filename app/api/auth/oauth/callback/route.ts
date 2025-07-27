@@ -165,6 +165,19 @@ export async function GET(req: NextRequest) {
         message: error.message,
         stack: error.stack
       })
+      
+      // Provide more specific error information
+      if (error.message.includes('Failed to exchange Microsoft token')) {
+        return NextResponse.redirect(`${origin}/login?error=microsoft_token_exchange_failed`)
+      } else if (error.message.includes('Failed to exchange Google token')) {
+        return NextResponse.redirect(`${origin}/login?error=google_token_exchange_failed`)
+      } else if (error.message.includes('Failed to get Microsoft user info')) {
+        return NextResponse.redirect(`${origin}/login?error=microsoft_user_info_failed`)
+      } else if (error.message.includes('Failed to get Google user info')) {
+        return NextResponse.redirect(`${origin}/login?error=google_user_info_failed`)
+      } else if (error.message.includes('Missing id_token')) {
+        return NextResponse.redirect(`${origin}/login?error=missing_id_token`)
+      }
     }
     return NextResponse.redirect(`${origin}/login?error=token_exchange_failed`)
   }

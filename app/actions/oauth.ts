@@ -2,20 +2,20 @@
 
 import { redirect } from 'next/navigation'
 
-const MS_CLIENT_ID = process.env.MS_CLIENT_ID as string
+const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID as string
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string
 const HOST = process.env.NEXT_PUBLIC_HOST as string
 
-if (!MS_CLIENT_ID || !GOOGLE_CLIENT_ID || !HOST) {
+if (!MICROSOFT_CLIENT_ID || !GOOGLE_CLIENT_ID || !HOST) {
   throw new Error('Missing required environment variables for OAuth configuration')
 }
 
 export async function initiateMicrosoftOAuth() {
   const params = new URLSearchParams({
-    client_id: MS_CLIENT_ID,
+    client_id: MICROSOFT_CLIENT_ID,
     redirect_uri: `${HOST}/oauth/callback`,
     response_type: 'code',
-    scope: 'openid profile email Calendars.ReadWrite offline_access',
+    scope: 'openid profile email User.Read Calendars.ReadWrite offline_access',
     prompt: 'consent',
     state: 'microsoft'
   })
