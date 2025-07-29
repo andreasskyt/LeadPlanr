@@ -125,21 +125,22 @@ function suggestTimesForEvent(
       });
     }
 
-    console.log('[DEBUG][suggestTimesForEvent] Date:', currentDate.toDateString(), 'Intervals:', intervals);
+    //console.log('[DEBUG][suggestTimesForEvent] Date:', currentDate.toDateString(), 'Intervals:', intervals);
 
     // 4. For each gap, check if the new event (plus travel time) fits
     for (const interval of intervals) {
       const intervalDuration = (interval.end.getTime() - interval.start.getTime()) / (1000 * 60);
       if (intervalDuration < EVENT_DURATION) {
-        console.log('[DEBUG][suggestTimesForEvent] Skipping interval (too short):', interval, 'Duration:', intervalDuration);
+        //console.log('[DEBUG][suggestTimesForEvent] Skipping interval (too short):', interval, 'Duration:', intervalDuration);
         continue;
       }
 
-      // Calculate travel times
+      // Calculate travel times and net additional distance
       let travelTimeTo = 0;
       let travelTimeFrom = 0;
       let addedKilometers = 0;
 
+      /*
       // Debug prevEvent/nextEvent
       console.log('[DEBUG][suggestTimesForEvent] Interval:', interval);
       if (interval.prevEvent) {
@@ -148,32 +149,52 @@ function suggestTimesForEvent(
       if (interval.nextEvent) {
         console.log('[DEBUG][suggestTimesForEvent] nextEvent:', interval.nextEvent, 'startLat:', interval.nextEvent.startLat, 'startLong:', interval.nextEvent.startLong, 'endLat:', interval.nextEvent.endLat, 'endLong:', interval.nextEvent.endLong);
       }
+      */
+
+      // Calculate distances for net additional kilometers
+      let distanceTo = 0;
+      let distanceFrom = 0;
+      let originalDistance = 0;
 
       // Use endLat/endLong for prevEvent (end of previous busy period)
       if (interval.prevEvent?.endLat != null && interval.prevEvent?.endLong != null) {
-        const distanceTo = calculateDistance(
+        distanceTo = calculateDistance(
           interval.prevEvent.endLat,
           interval.prevEvent.endLong,
           newEvent.lat,
           newEvent.long
         );
-        travelTimeTo = Math.ceil((distanceTo / TRAVEL_SPEED) * 60 / 30) * 30;
-        addedKilometers += distanceTo;
-        console.log('[DEBUG][suggestTimesForEvent] Travel from prevEvent end:', interval.prevEvent.endLat, interval.prevEvent.endLong, 'to', newEvent.lat, newEvent.long, 'Distance:', distanceTo, 'TravelTimeTo:', travelTimeTo);
+        travelTimeTo = Math.ceil(distanceTo * 60 / 15 / TRAVEL_SPEED) * 15;
+        //console.log('[DEBUG][suggestTimesForEvent] Travel from prevEvent end:', interval.prevEvent.endLat, interval.prevEvent.endLong, 'to', newEvent.lat, newEvent.long, 'Distance:', distanceTo, 'TravelTimeTo:', travelTimeTo);
       }
 
       // Use startLat/startLong for nextEvent (start of next busy period)
       if (interval.nextEvent?.startLat != null && interval.nextEvent?.startLong != null) {
-        const distanceFrom = calculateDistance(
+        distanceFrom = calculateDistance(
           newEvent.lat,
           newEvent.long,
           interval.nextEvent.startLat,
           interval.nextEvent.startLong
         );
-        travelTimeFrom = Math.ceil((distanceFrom / TRAVEL_SPEED) * 60 / 30) * 30;
-        addedKilometers += distanceFrom;
-        console.log('[DEBUG][suggestTimesForEvent] Travel to nextEvent start:', newEvent.lat, newEvent.long, 'to', interval.nextEvent.startLat, interval.nextEvent.startLong, 'Distance:', distanceFrom, 'TravelTimeFrom:', travelTimeFrom);
+        travelTimeFrom = Math.ceil(distanceFrom  * 60 / 15 / TRAVEL_SPEED) * 15;
+        //console.log('[DEBUG][suggestTimesForEvent] Travel to nextEvent start:', newEvent.lat, newEvent.long, 'to', interval.nextEvent.startLat, interval.nextEvent.startLong, 'Distance:', distanceFrom, 'TravelTimeFrom:', travelTimeFrom);
       }
+
+      // Calculate the original distance that would be traveled without the new event
+      if (interval.prevEvent?.endLat != null && interval.prevEvent?.endLong != null && 
+          interval.nextEvent?.startLat != null && interval.nextEvent?.startLong != null) {
+        originalDistance = calculateDistance(
+          interval.prevEvent.endLat,
+          interval.prevEvent.endLong,
+          interval.nextEvent.startLat,
+          interval.nextEvent.startLong
+        );
+        //console.log('[DEBUG][suggestTimesForEvent] Original distance (prevEvent end to nextEvent start):', originalDistance);
+      }
+
+      // Calculate net additional kilometers: (A-B + B-C) - A-C
+      addedKilometers = (distanceTo + distanceFrom) - originalDistance;
+      //console.log('[DEBUG][suggestTimesForEvent] Net additional kilometers:', addedKilometers, '(distanceTo:', distanceTo, '+ distanceFrom:', distanceFrom, '- originalDistance:', originalDistance, ')');
 
       // Calculate available subinterval
       const availableStart = new Date(interval.start.getTime() + travelTimeTo * 60 * 1000);
@@ -185,18 +206,18 @@ function suggestTimesForEvent(
           end: availableEnd.toISOString(),
           addedKilometers
         });
-        console.log('[DEBUG][suggestTimesForEvent] Added suggestion:', {
+        /*console.log('[DEBUG][suggestTimesForEvent] Added suggestion:', {
           start: availableStart,
           end: availableEnd,
           addedKilometers
-        });
+        });*/
       } else {
-        console.log('[DEBUG][suggestTimesForEvent] Skipping available interval (not enough time after travel):', {
+        /*console.log('[DEBUG][suggestTimesForEvent] Skipping available interval (not enough time after travel):', {
           availableStart,
           availableEnd,
           availableDuration,
           interval
-        });
+        });*/
       }
     }
 
