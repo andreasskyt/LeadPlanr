@@ -273,8 +273,8 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
     setError(null);
 
     try {
-      const start = new Date(`${selectedDate}T${startTime}`).toISOString();
-      const end = new Date(`${selectedDate}T${endTime}`).toISOString();
+      const start = `${selectedDate}T${startTime}`;
+      const end = `${selectedDate}T${endTime}`;
 
       const response = await fetch('/api/calendar-events', {
         method: 'POST',

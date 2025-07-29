@@ -2,6 +2,38 @@ import { NextResponse } from 'next/server';
 import { calendarAccounts } from '@/lib/db';
 import { verifyToken } from '@/lib/jwt';
 import { cookies } from 'next/headers';
+import { toZonedTime } from 'date-fns-tz';
+
+// Helper function to convert timezone-aware dates to local time
+function convertToLocalTime(dateTime: string, timeZone?: string): string {
+  if (!timeZone) {
+    // No timezone specified - assume it's in the user's local timezone
+    return dateTime;
+  }
+  
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+  if (timeZone === 'UTC') {
+    // UTC timezone - ensure proper UTC parsing and convert to local
+    const utcDate = new Date(dateTime + 'Z'); // Ensure it's treated as UTC
+    const localDate = toZonedTime(utcDate, userTimeZone);
+    return localDate.toISOString();
+  } else if (timeZone === userTimeZone) {
+    // Same timezone as user - no conversion needed
+    return dateTime;
+  } else {
+    // Different timezone - convert from event's timezone to user's timezone
+    try {
+      // Parse the datetime in the event's timezone and convert to user's timezone
+      const eventDate = new Date(dateTime);
+      const localDate = toZonedTime(eventDate, userTimeZone);
+      return localDate.toISOString();
+    } catch (error) {
+      console.warn('Timezone conversion failed, using original datetime:', error);
+      return dateTime;
+    }
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -53,11 +85,10 @@ export async function GET(request: Request) {
     } else if (calendarAccount.provider.toLowerCase() === 'microsoft') {
       provider = 'microsoft';
       response = await fetch(
-        `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events?` + new URLSearchParams({
-          $filter: `start/dateTime ge '${start}' and end/dateTime le '${end}'`,
-          $orderby: 'start/dateTime',
-          $select: 'id,subject,start,end,location,bodyPreview'
-        }),
+        `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events?` +
+        `$filter=start/dateTime ge '${start}' and end/dateTime le '${end}'&` +
+        `$orderby=start/dateTime&` +
+        `$select=id,subject,start,end,location,bodyPreview`,
         {
           headers: {
             Authorization: `Bearer ${calendarAccount.access_token}`,
@@ -91,8 +122,8 @@ export async function GET(request: Request) {
       events = data.value.map((event: any) => ({
         id: event.id,
         title: event.subject,
-        start: event.start?.dateTime,
-        end: event.end?.dateTime,
+        start: convertToLocalTime(event.start?.dateTime, event.start?.timeZone),
+        end: convertToLocalTime(event.end?.dateTime, event.end?.timeZone),
         location: event.location?.displayName,
         description: event.bodyPreview,
         calendarId,
@@ -153,6 +184,7 @@ export async function POST(request: Request) {
       );
     } else if (calendarAccount.provider.toLowerCase() === 'microsoft') {
       provider = 'microsoft';
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       response = await fetch(
         `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events`,
         {
@@ -163,8 +195,8 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             subject: title,
-            start: { dateTime: start, timeZone: 'UTC' },
-            end: { dateTime: end, timeZone: 'UTC' },
+            start: { dateTime: start, timeZone: timeZone },
+            end: { dateTime: end, timeZone: timeZone },
             location: { displayName: location },
             body: { content: description, contentType: 'text' },
           }),
@@ -197,8 +229,8 @@ export async function POST(request: Request) {
       calendarEvent = {
         id: event.id,
         title: event.subject,
-        start: event.start?.dateTime,
-        end: event.end?.dateTime,
+        start: convertToLocalTime(event.start?.dateTime, event.start?.timeZone),
+        end: convertToLocalTime(event.end?.dateTime, event.end?.timeZone),
         location: event.location?.displayName,
         description: event.bodyPreview,
         calendarId,

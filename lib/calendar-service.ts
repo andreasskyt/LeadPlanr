@@ -1,4 +1,5 @@
 import { CalendarAccount } from './db';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export interface CalendarEvent {
   id: string;
@@ -27,7 +28,40 @@ class CalendarService {
       return date;
     }
     if ('dateTime' in date) {
-      return date.dateTime;
+      const dateTime = date.dateTime;
+      const timeZone = date.timeZone;
+      
+      // Log timezone conversion for debugging (can be removed in production)
+      console.log('Converting date:', { dateTime, timeZone, userTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      
+      // Get the user's local timezone
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Handle all timezone scenarios
+      if (!timeZone) {
+        // No timezone specified - assume it's in the user's local timezone
+        return dateTime;
+      } else if (timeZone === 'UTC') {
+        // UTC timezone - ensure proper UTC parsing and convert to local
+        const utcDate = new Date(dateTime + 'Z'); // Ensure it's treated as UTC
+        const localDate = toZonedTime(utcDate, userTimeZone);
+        return localDate.toISOString();
+      } else if (timeZone === userTimeZone) {
+        // Same timezone as user - no conversion needed
+        return dateTime;
+      } else {
+        // Different timezone - convert from event's timezone to user's timezone
+        // Use date-fns-tz to properly handle the timezone conversion
+        try {
+          // Parse the datetime in the event's timezone and convert to user's timezone
+          const eventDate = new Date(dateTime);
+          const localDate = toZonedTime(eventDate, userTimeZone);
+          return localDate.toISOString();
+        } catch (error) {
+          console.warn('Timezone conversion failed, using original datetime:', error);
+          return dateTime;
+        }
+      }
     } else {
       // All-day event: treat as midnight UTC
       return date.date + 'T00:00:00Z';
@@ -181,10 +215,12 @@ class CalendarService {
     startDate: Date,
     endDate: Date
   ): Promise<CalendarEvent[]> {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // Use the events endpoint with timezone-aware filtering
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/calendarView?` +
-      `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}&timeZone=${timeZone}`,
+      `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events?` +
+      `$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'&` +
+      `$orderby=start/dateTime&` +
+      `$select=id,subject,start,end,location,bodyPreview`,
       {
         headers: {
           Authorization: `Bearer ${account.access_token}`,
@@ -270,6 +306,7 @@ class CalendarService {
 
   clearCache() {
     this.cache.clear();
+    console.log('Calendar service cache cleared');
   }
 }
 
