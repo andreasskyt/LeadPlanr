@@ -42,6 +42,7 @@ export function useCalendarEvents(
       try {
         // Always fetch for the week containing the selected date
         const { start, end } = getWeekRange(selectedDate);
+        // Use Date objects - the calendar service will handle timezone conversion properly
         const fetchedEvents = await calendarService.fetchEvents(accounts, [selectedCalendar], start, end);
         if (isMounted) {
           // Debug log

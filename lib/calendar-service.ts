@@ -32,7 +32,7 @@ class CalendarService {
       const timeZone = date.timeZone;
       
       // Log timezone conversion for debugging (can be removed in production)
-      console.log('Converting date:', { dateTime, timeZone, userTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      // console.log('Converting date:', { dateTime, timeZone, userTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       
       // Get the user's local timezone
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -179,8 +179,11 @@ class CalendarService {
     endDate: Date
   ): Promise<CalendarEvent[]> {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?` +
-      `timeMin=${startDate.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true&timeZone=${timeZone}`;
+      `timeMin=${startDateStr}&timeMax=${endDateStr}&singleEvents=true&timeZone=${timeZone}`;
+    
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${account.access_token}`,
@@ -216,9 +219,11 @@ class CalendarService {
     endDate: Date
   ): Promise<CalendarEvent[]> {
     // Use the events endpoint with timezone-aware filtering
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events?` +
-      `$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'&` +
+      `$filter=start/dateTime ge '${startDateStr}' and end/dateTime le '${endDateStr}'&` +
       `$orderby=start/dateTime&` +
       `$select=id,subject,start,end,location,bodyPreview`,
       {

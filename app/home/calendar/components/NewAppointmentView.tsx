@@ -345,9 +345,13 @@ const NewAppointmentView: React.FC<NewAppointmentViewProps> = ({
           const endDate = new Date();
           endDate.setDate(endDate.getDate() + 14);
 
+          // Create timezone-aware date strings
+          const startStr = startDate.toISOString().split('T')[0] + 'T00:00:00';
+          const endStr = endDate.toISOString().split('T')[0] + 'T23:59:59';
+
           return fetch(`/api/calendar-events?${new URLSearchParams({
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
+            start: startStr,
+            end: endStr,
             calendarId: selectedCalendarId
           })}`)
             .then(res => {
